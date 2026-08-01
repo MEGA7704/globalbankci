@@ -50,7 +50,7 @@ Vous pouvez vérifier uniquement les **noms** des secrets configurés :
 ```bash
 npm run secrets:list
 ```
-
+   
 ## Développement local
 
 Copiez `.dev.vars.example` vers `.dev.vars`, puis saisissez uniquement des valeurs locales de test :

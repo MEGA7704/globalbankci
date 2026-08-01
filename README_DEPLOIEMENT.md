@@ -155,3 +155,10 @@ npm run db:migrate:remote
 ```
 
 Aucune nouvelle variable ou liaison Cloudflare n’est nécessaire.
+
+## Corrections interface V7
+
+- Le bouton **+ Nouveau client** est visible dans la section Clients pour les sessions bancaires autorisées.
+- La vérification côté interface s’appuie sur la session sécurisée chargée par `/api/me`; aucun jeton n’est stocké ou exposé dans le navigateur.
+- Le texte informatif relatif au stockage D1 a été retiré des fenêtres **Contacter le support** et **Envoyer aux entreprises**.
+

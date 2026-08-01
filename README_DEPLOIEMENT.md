@@ -171,3 +171,35 @@ Aucune nouvelle variable ou liaison Cloudflare n’est nécessaire.
 - Les espacements, icônes, titres et cartes d’information ont été ajustés pour conserver un rendu équilibré.
 - La bannière horizontale « Bienvenue, … / rôle / date et heure » a été supprimée de toutes les pages internes.
 - Aucun nouveau binding, secret ou changement D1 n’est requis.
+
+## Gestion RBAC complète — V9
+
+La V9 sépare réellement les espaces `admin_bank`, `agent_caisse`, `agent_credit` et `auditeur`. Le Super Administrateur reste indépendant. Les menus, données renvoyées, actions et routes API sont filtrés par permission précise, avec contrôle systématique dans `public/_worker.js`.
+
+La colonne `users.permissions` accepte une politique JSON de la forme :
+
+```json
+{"allow":["clients.create"],"deny":["moves.create.withdrawal"]}
+```
+
+Les autorisations supplémentaires sont limitées à une liste compatible avec le rôle. Elles ne peuvent jamais permettre à un agent de gérer les utilisateurs, les paramètres, une autre banque ou les secrets Cloudflare.
+
+La V9 ajoute également :
+
+- les demandes de correction et leur traitement par l'Administrateur banque ;
+- le journal de sécurité enrichi avec la permission, la route et la ressource ;
+- la suppression logique et la restauration des clients et comptes ;
+- l'annulation logique des mouvements financiers ;
+- l'invalidation immédiate d'une session lorsque l'utilisateur est bloqué, archivé ou que sa version d'authentification change ;
+- des tests automatiques par rôle.
+
+Après la mise à jour du dépôt :
+
+```bash
+npm install
+npm run db:migrate:remote
+npm run build
+npm run test:security
+```
+
+Consultez `RBAC_V9.md` pour la matrice et les principes de sécurité.

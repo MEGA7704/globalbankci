@@ -38,10 +38,10 @@ const SCHEMA = `
 CREATE TABLE IF NOT EXISTS banks (id TEXT PRIMARY KEY,name TEXT NOT NULL,manager TEXT,contact TEXT,address TEXT,email TEXT DEFAULT '',slogan TEXT DEFAULT '',logo TEXT DEFAULT '',stamp TEXT DEFAULT '',signature TEXT DEFAULT '',primary_color TEXT DEFAULT '#003b3b',secondary_color TEXT DEFAULT '#e7ad2f',footer_text TEXT DEFAULT 'Document généré automatiquement',legal_mentions TEXT DEFAULT '',cga_conditions TEXT DEFAULT '',currency TEXT DEFAULT 'FCFA',country TEXT DEFAULT '',city TEXT DEFAULT '',login TEXT NOT NULL UNIQUE,pass TEXT NOT NULL,auth_version INTEGER NOT NULL DEFAULT 1,status TEXT NOT NULL DEFAULT 'Actif',subscription TEXT NOT NULL DEFAULT 'FREE',subscription_started_at TEXT DEFAULT '',subscription_expires_at TEXT DEFAULT '',subscription_updated_at TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS clients (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,contact TEXT,job TEXT,address TEXT,piece TEXT,pass TEXT,client_type TEXT DEFAULT 'personne_physique',client_details TEXT DEFAULT '',photo_logo TEXT DEFAULT '',is_blocked INTEGER NOT NULL DEFAULT 0,is_deleted INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,client_id TEXT NOT NULL,number TEXT NOT NULL UNIQUE,type TEXT NOT NULL,balance REAL NOT NULL DEFAULT 0,status TEXT NOT NULL DEFAULT 'Actif',is_blocked INTEGER NOT NULL DEFAULT 0,block_reason TEXT DEFAULT '',credit_fee REAL DEFAULT 0,credit_carnet_fee REAL DEFAULT 0,credit_amount REAL DEFAULT 0,credit_rate REAL DEFAULT 0,credit_duration INTEGER DEFAULT 0,credit_monthly REAL DEFAULT 0,credit_due_count INTEGER DEFAULT 0,credit_penalty_rate REAL DEFAULT 0,credit_total REAL DEFAULT 0,credit_choice TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
-CREATE TABLE IF NOT EXISTS moves (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,account_id TEXT NOT NULL,type TEXT NOT NULL,description TEXT,amount REAL NOT NULL,balance_after REAL NOT NULL,created_by TEXT DEFAULT '',created_by_role TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
-CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT,login TEXT,pass TEXT,auth_version INTEGER NOT NULL DEFAULT 1,role TEXT,status TEXT NOT NULL DEFAULT 'Actif',permissions TEXT DEFAULT '[]',last_login TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS moves (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,account_id TEXT NOT NULL,type TEXT NOT NULL,description TEXT,amount REAL NOT NULL,balance_after REAL NOT NULL,created_by TEXT DEFAULT '',created_by_role TEXT DEFAULT '',is_voided INTEGER NOT NULL DEFAULT 0,voided_by TEXT DEFAULT '',voided_at TEXT DEFAULT '',void_reason TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT,login TEXT,pass TEXT,auth_version INTEGER NOT NULL DEFAULT 1,role TEXT,status TEXT NOT NULL DEFAULT 'Actif',permissions TEXT DEFAULT '{"allow":[],"deny":[]}',last_login TEXT DEFAULT '',is_deleted INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,message TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT (datetime('now')));
-CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,role TEXT DEFAULT '',motif TEXT DEFAULT '',user_id TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,role TEXT DEFAULT '',motif TEXT DEFAULT '',user_id TEXT DEFAULT '',permission TEXT DEFAULT '',route TEXT DEFAULT '',resource TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS charge_bases (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,category TEXT,percent REAL DEFAULT 0,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS obligations (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,amount REAL DEFAULT 0,due_day INTEGER DEFAULT 1,base_type TEXT DEFAULT 'Bénéfice général',base_item TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS reset_requests (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,user_id TEXT,message TEXT,status TEXT DEFAULT 'En attente',created_at TEXT NOT NULL DEFAULT (datetime('now')));
@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS manual_revenues (id TEXT PRIMARY KEY,bank_id TEXT NOT
 CREATE TABLE IF NOT EXISTS ignored_revenues (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,revenue_key TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS management_settings (bank_id TEXT PRIMARY KEY,year INTEGER NOT NULL,month INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'open',updated_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS support_messages (id TEXT PRIMARY KEY,broadcast_id TEXT DEFAULT '',sender_type TEXT NOT NULL,sender_bank_id TEXT DEFAULT '',recipient_bank_id TEXT NOT NULL,category TEXT NOT NULL DEFAULT 'message',subject TEXT NOT NULL,body TEXT NOT NULL,bank_read_at TEXT DEFAULT '',super_read_at TEXT DEFAULT '',deleted_by_bank INTEGER NOT NULL DEFAULT 0,deleted_by_super INTEGER NOT NULL DEFAULT 0,created_by TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS operation_requests (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,movement_id TEXT NOT NULL,requested_by TEXT NOT NULL,requested_by_name TEXT DEFAULT '',requested_by_role TEXT NOT NULL,request_type TEXT NOT NULL,reason TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',reviewed_by TEXT DEFAULT '',reviewed_at TEXT DEFAULT '',review_note TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 
 `;
 
@@ -461,10 +462,11 @@ async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA
  try{await env.DB.prepare("UPDATE banks SET subscription_expires_at=CASE WHEN COALESCE(subscription_expires_at,'')='' THEN datetime(COALESCE(subscription_started_at,created_at,datetime('now')), CASE WHEN subscription='BUSINESS' THEN '+365 days' ELSE '+20 days' END) ELSE subscription_expires_at END").run();}catch(e){}
  try{await env.DB.prepare("UPDATE banks SET subscription_updated_at=COALESCE(NULLIF(subscription_updated_at,''),subscription_started_at,created_at,datetime('now'))").run();}catch(e){}
  try{await env.DB.exec('CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,created_at TEXT NOT NULL DEFAULT (datetime(\'now\')))')}catch(e){} const accountCols=['credit_fee REAL DEFAULT 0','credit_carnet_fee REAL DEFAULT 0','credit_amount REAL DEFAULT 0','credit_rate REAL DEFAULT 0','credit_duration INTEGER DEFAULT 0','credit_monthly REAL DEFAULT 0','credit_due_count INTEGER DEFAULT 0','credit_penalty_rate REAL DEFAULT 0','credit_total REAL DEFAULT 0',"credit_choice TEXT DEFAULT \"\"",'is_blocked INTEGER NOT NULL DEFAULT 0',"block_reason TEXT DEFAULT ''",'is_deleted INTEGER NOT NULL DEFAULT 0']; for(const col of accountCols){try{await env.DB.exec('ALTER TABLE accounts ADD COLUMN '+col)}catch(e){}} const obligationCols=["base_type TEXT DEFAULT 'Bénéfice général'","base_item TEXT DEFAULT ''"]; for(const col of obligationCols){try{await env.DB.exec('ALTER TABLE obligations ADD COLUMN '+col)}catch(e){}} for(const col of ['is_active INTEGER NOT NULL DEFAULT 1']){try{await env.DB.exec('ALTER TABLE account_types ADD COLUMN '+col)}catch(e){} try{await env.DB.exec('ALTER TABLE movement_types ADD COLUMN '+col)}catch(e){}} const movementTypeCols=["category TEXT DEFAULT ''",'is_bank_revenue INTEGER',"description TEXT DEFAULT ''"]; for(const col of movementTypeCols){try{await env.DB.exec('ALTER TABLE movement_types ADD COLUMN '+col)}catch(e){}} for(const col of ['is_blocked INTEGER NOT NULL DEFAULT 0','is_deleted INTEGER NOT NULL DEFAULT 0',"client_type TEXT DEFAULT 'personne_physique'","client_details TEXT DEFAULT ''","photo_logo TEXT DEFAULT ''"]){try{await env.DB.exec('ALTER TABLE clients ADD COLUMN '+col)}catch(e){}}
- const userCols=["status TEXT NOT NULL DEFAULT 'Actif'","permissions TEXT DEFAULT '[]'","last_login TEXT DEFAULT ''","auth_version INTEGER NOT NULL DEFAULT 1"]; for(const col of userCols){try{await env.DB.exec('ALTER TABLE users ADD COLUMN '+col)}catch(e){}}
- const moveCols=["created_by TEXT DEFAULT ''","created_by_role TEXT DEFAULT ''"]; for(const col of moveCols){try{await env.DB.exec('ALTER TABLE moves ADD COLUMN '+col)}catch(e){}}
- const secCols=["role TEXT DEFAULT ''","motif TEXT DEFAULT ''","user_id TEXT DEFAULT ''"]; for(const col of secCols){try{await env.DB.exec('ALTER TABLE security_logs ADD COLUMN '+col)}catch(e){}}
- try{await env.DB.exec(`CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,role TEXT DEFAULT '',motif TEXT DEFAULT '',user_id TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')))`)}catch(e){}
+ const userCols=["status TEXT NOT NULL DEFAULT 'Actif'","permissions TEXT DEFAULT '{\"allow\":[],\"deny\":[]}'","last_login TEXT DEFAULT ''","auth_version INTEGER NOT NULL DEFAULT 1","is_deleted INTEGER NOT NULL DEFAULT 0"]; for(const col of userCols){try{await env.DB.exec('ALTER TABLE users ADD COLUMN '+col)}catch(e){}}
+ const moveCols=["created_by TEXT DEFAULT ''","created_by_role TEXT DEFAULT ''","is_voided INTEGER NOT NULL DEFAULT 0","voided_by TEXT DEFAULT ''","voided_at TEXT DEFAULT ''","void_reason TEXT DEFAULT ''"]; for(const col of moveCols){try{await env.DB.exec('ALTER TABLE moves ADD COLUMN '+col)}catch(e){}}
+ const secCols=["role TEXT DEFAULT ''","motif TEXT DEFAULT ''","user_id TEXT DEFAULT ''","permission TEXT DEFAULT ''","route TEXT DEFAULT ''","resource TEXT DEFAULT ''"]; for(const col of secCols){try{await env.DB.exec('ALTER TABLE security_logs ADD COLUMN '+col)}catch(e){}}
+ try{await env.DB.exec(`CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,role TEXT DEFAULT '',motif TEXT DEFAULT '',user_id TEXT DEFAULT '',permission TEXT DEFAULT '',route TEXT DEFAULT '',resource TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')))`)}catch(e){}
+ try{await env.DB.exec(`CREATE TABLE IF NOT EXISTS operation_requests (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,movement_id TEXT NOT NULL,requested_by TEXT NOT NULL,requested_by_name TEXT DEFAULT '',requested_by_role TEXT NOT NULL,request_type TEXT NOT NULL,reason TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',reviewed_by TEXT DEFAULT '',reviewed_at TEXT DEFAULT '',review_note TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')))`)}catch(e){}
  for(const sql of [
   'CREATE INDEX IF NOT EXISTS idx_clients_bank ON clients(bank_id)',
   'CREATE INDEX IF NOT EXISTS idx_accounts_bank ON accounts(bank_id)',
@@ -473,7 +475,9 @@ async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_global ON users(login) WHERE login IS NOT NULL AND login<>''",
   'CREATE INDEX IF NOT EXISTS idx_support_messages_bank ON support_messages(recipient_bank_id,created_at)',
   'CREATE INDEX IF NOT EXISTS idx_support_messages_super ON support_messages(deleted_by_super,created_at)',
-  'CREATE INDEX IF NOT EXISTS idx_support_messages_broadcast ON support_messages(broadcast_id)'
+  'CREATE INDEX IF NOT EXISTS idx_support_messages_broadcast ON support_messages(broadcast_id)',
+  'CREATE INDEX IF NOT EXISTS idx_operation_requests_bank ON operation_requests(bank_id,created_at)',
+  'CREATE INDEX IF NOT EXISTS idx_operation_requests_user ON operation_requests(bank_id,requested_by,created_at)'
  ]){try{await env.DB.exec(sql)}catch(e){}}
  schemaReady=true;}
 
@@ -486,33 +490,79 @@ async function managementSettings(env,bankId){
 async function rejectIfExerciseClosed(env,bankId){const s=await managementSettings(env,bankId);const st=String(s.status||'open').toLowerCase();if(st==='locked'||st==='closed')throw json({error:'Exercice '+(st==='locked'?'verrouillé':'clôturé')+' : modification impossible. Consultation et impression restent autorisées.'},403);}
 
 async function addLog(env,bankId,message){await env.DB.prepare('INSERT INTO logs(id,bank_id,message) VALUES(?,?,?)').bind(uid('LOG'),bankId,message).run();}
-function canonicalRole(v){const n=norm(v);if(n.includes('super'))return 'super_admin';if(n.includes('administrateur')||n==='admin'||n.includes('admin banque'))return 'admin_bank';if(n.includes('caisse')||n.includes('caissier'))return 'agent_caisse';if(n.includes('credit'))return 'agent_credit';if(n.includes('audit')||n.includes('consult'))return 'auditeur';return 'admin_bank';}
-function roleLabel(v){const k=canonicalRole(v);return {super_admin:'Super Admin',admin_bank:'Administrateur banque',agent_caisse:'Agent caisse',agent_credit:'Agent crédit',auditeur:'Agent consultation / auditeur'}[k]||'Administrateur banque';}
-function parsePermissions(v){if(Array.isArray(v))return v.map(String);try{const x=JSON.parse(String(v||'[]'));return Array.isArray(x)?x.map(String):[]}catch(e){return String(v||'').split(',').map(x=>x.trim()).filter(Boolean)}}
-function defaultPermissionsForRole(v){const k=canonicalRole(v);if(k==='agent_caisse'||k==='agent_credit'||k==='auditeur')return ['clients_view','clients_manage','comptes_view','comptes_manage','caisse','mouvements_view','credit','rapports_read','print'];return []}
-function sessionPermissions(s){const k=sessionRoleKey(s);if(k==='super_admin'||k==='admin_bank')return ['ALL'];return Array.from(new Set([...defaultPermissionsForRole((s&&s.userRole)||''),'clients_view','clients_manage','comptes_view','comptes_manage']))}
-function hasPermission(s,key){const p=sessionPermissions(s);return p.includes('ALL')||p.includes(key)}
-function safePermissionsPayload(v,role){return defaultPermissionsForRole(role)}
-async function addSecurityLog(env,bankId,ctx,action,section,result='autorisé',motif=''){
- try{await env.DB.prepare('INSERT INTO security_logs(id,bank_id,action,section,result,agent,role,motif,user_id) VALUES(?,?,?,?,?,?,?,?,?)').bind(uid('SEC'),bankId||'',String(action||''),String(section||''),String(result||''),String((ctx&&ctx.userName)||'Super Admin'),roleLabel((ctx&&ctx.userRole)||ctx?.role||''),String(motif||''),String((ctx&&ctx.userId)||'')).run();}catch(e){}
+function canonicalRole(v){const n=norm(v);if(n.includes('super'))return 'super_admin';if(n.includes('administrateur')||n==='admin'||n.includes('admin banque'))return 'admin_bank';if(n.includes('caisse')||n.includes('caissier'))return 'agent_caisse';if(n.includes('credit'))return 'agent_credit';if(n.includes('audit')||n.includes('consult'))return 'auditeur';return 'auditeur';}
+function roleLabel(v){const k=canonicalRole(v);return {super_admin:'Super Admin',admin_bank:'Administrateur banque',agent_caisse:'Agent caisse',agent_credit:'Agent crédit',auditeur:'Agent consultation / auditeur'}[k]||'Agent consultation / auditeur';}
+const ROLE_PERMISSIONS=Object.freeze({
+ admin_bank:['clients.read','clients.create','clients.update','clients.block','clients.unblock','clients.delete','clients.restore','accounts.read','accounts.create','accounts.update','accounts.block','accounts.unblock','accounts.close','accounts.delete','accounts.restore','moves.read.all','moves.create.all','moves.correct','credits.manage','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credits.penalties.apply','credit_movements.read','credit_documents.print','credit_reports.read.limited','users.manage.agents','reports.read.all','settings.manage','security.read','exercises.manage','messages.manage','correction.request','correction.review','receipts.print','documents.print','profile.read.own'],
+ agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.read.own','receipts.print','correction.request','profile.read.own'],
+ agent_credit:['clients.read','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credit_movements.read','credit_documents.print','credit_reports.read.limited','correction.request','profile.read.own'],
+ auditeur:['clients.read','accounts.read','moves.read','credits.read','reports.read.limited','documents.print','profile.read.own']
+});
+const ROLE_EXTRA_PERMISSIONS=Object.freeze({
+ agent_caisse:['clients.create','clients.update.basic','moves.create.allowed_fees'],
+ agent_credit:['clients.create','clients.update.basic','credits.penalties.apply'],
+ auditeur:[]
+});
+function parsePermissionPolicy(v){
+ if(v&&typeof v==='object'&&!Array.isArray(v))return {allow:Array.isArray(v.allow)?v.allow.map(String):[],deny:Array.isArray(v.deny)?v.deny.map(String):[]};
+ try{const x=JSON.parse(String(v||'{}'));if(x&&typeof x==='object'&&!Array.isArray(x))return {allow:Array.isArray(x.allow)?x.allow.map(String):[],deny:Array.isArray(x.deny)?x.deny.map(String):[]};}catch(e){}
+ return {allow:[],deny:[]};
 }
-function sessionRoleKey(s){if(!s)return '';if(s.role==='super')return 'super_admin';return canonicalRole(s.userRole||'Administrateur banque');}
-async function denyRole(env,bankId,s,action,section,motif){await addSecurityLog(env,bankId,s,action,section,'refusé',motif);return json({error:'Accès refusé. Vous n’avez pas l’autorisation d’ouvrir cette section.'},403)}
-async function enforceRoleApiAccess(env,bankId,s,path,request){
- const key=sessionRoleKey(s); if(key==='super_admin'||key==='admin_bank')return null;
- const method=request.method;
- if(path==='/api/security/log'||path==='/api/logout')return null;
- if(method==='GET'&&path==='/api/me')return null;
+function defaultPermissionsForRole(v){return [...(ROLE_PERMISSIONS[canonicalRole(v)]||[])];}
+function effectivePermissions(role,raw){
+ const key=canonicalRole(role);if(key==='super_admin'||key==='admin_bank')return ['ALL'];
+ const base=new Set(defaultPermissionsForRole(key));const policy=parsePermissionPolicy(raw);const allowedExtra=new Set(ROLE_EXTRA_PERMISSIONS[key]||[]);
+ for(const permission of policy.deny)base.delete(String(permission));
+ for(const permission of policy.allow)if(allowedExtra.has(String(permission)))base.add(String(permission));
+ return [...base].sort();
+}
+function sessionPermissions(s){if(!s)return [];return effectivePermissions(s.userRole||'',s.userPermissions||s.permissions||{});}
+function hasPermission(s,key){const p=sessionPermissions(s);return p.includes('ALL')||p.includes(key);}
+function safePermissionsPayload(v,role){return effectivePermissions(role,v);}
+function safePermissionPolicy(v,role){
+ const key=canonicalRole(role);const policy=parsePermissionPolicy(v);const extras=new Set(ROLE_EXTRA_PERMISSIONS[key]||[]);const defaults=new Set(ROLE_PERMISSIONS[key]||[]);
+ return {allow:[...new Set(policy.allow.filter(x=>extras.has(String(x))).map(String))],deny:[...new Set(policy.deny.filter(x=>defaults.has(String(x))).map(String))]};
+}
+async function addSecurityLog(env,bankId,ctx,action,section,result='autorisé',motif='',meta={}){
+ try{await env.DB.prepare('INSERT INTO security_logs(id,bank_id,action,section,result,agent,role,motif,user_id,permission,route,resource) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(uid('SEC'),bankId||'',String(action||''),String(section||''),String(result||''),String((ctx&&ctx.userName)||'Super Admin'),roleLabel((ctx&&ctx.userRole)||ctx?.role||''),String(motif||''),String((ctx&&ctx.userId)||''),String(meta.permission||''),String(meta.route||''),String(meta.resource||'')).run();}catch(e){}
+}
+function sessionRoleKey(s){if(!s)return '';if(s.role==='super')return 'super_admin';return canonicalRole(s.userRole||'');}
+async function denyRole(env,bankId,s,action,section,motif,permission='',route=''){await addSecurityLog(env,bankId,s,action,section,'refusé',motif,{permission,route});return json({error:'Accès refusé. Permission requise : '+(permission||'autorisation serveur')+'.'},403);}
+function movePermissionForType(type){const t=norm(type);if(t==='depot'||t==='dépôt')return 'moves.create.deposit';if(t==='retrait')return 'moves.create.withdrawal';if(t.includes('paiement credit')||t.includes('paiement de credit')||t.includes('remboursement credit'))return 'credit_payments.create';if(t.includes('penalite')||t.includes('pénalité'))return 'credits.penalties.apply';if(t.includes('frais')&&(t.includes('depot')||t.includes('retrait')||t.includes('operation')))return 'moves.create.allowed_fees';return 'moves.create.all';}
+async function permissionForRequest(path,request){
+ const method=request.method.toUpperCase();
+ if(path==='/api/logout'||path==='/api/security/log')return null;
+ if((path==='/api/me'||path==='/api/load')&&method==='GET')return 'profile.read.own';
+ if(path==='/api/client/media'&&method==='GET')return 'clients.read';
+ if(path==='/api/messages'||path.startsWith('/api/messages/'))return 'messages.manage';
+ if(path==='/api/admin/verify-password')return 'settings.manage';
+ if(path==='/api/bank/update')return 'settings.manage';
+ if(path==='/api/client'&&method==='POST')return 'clients.create';
+ if(path==='/api/client/update'&&method==='POST')return 'clients.update';
+ if(path==='/api/client/block'&&method==='POST')return 'clients.block';
+ if(path==='/api/client/delete'&&method==='POST')return 'clients.delete';
+ if(path==='/api/client/restore'&&method==='POST')return 'clients.restore';
+ if(path==='/api/account'&&method==='POST'){let b={};try{b=await request.clone().json();}catch(e){}return isCreditAccountType(b.type)?'credit_accounts.create':'accounts.create';}
+ if(path==='/api/account/block'&&method==='POST')return 'accounts.block';
+ if(path==='/api/account/delete'&&method==='POST')return 'accounts.delete';
+ if(path==='/api/account/restore'&&method==='POST')return 'accounts.restore';
+ if(path==='/api/move'&&method==='POST'){let b={};try{b=await request.clone().json();}catch(e){}return movePermissionForType(b.type);}
+ if(path==='/api/move/delete'&&method==='POST')return 'moves.correct';
+ if(path==='/api/correction-requests'&&method==='GET')return 'correction.request';
+ if(path==='/api/correction-requests'&&method==='POST')return 'correction.request';
+ if(path==='/api/correction-requests/review'&&method==='POST')return 'correction.review';
+ if(path==='/api/user'||path.startsWith('/api/user/')||path==='/api/settings/user-reset')return 'users.manage.agents';
+ if(path==='/api/management/settings'||path==='/api/management/status'||path==='/api/save')return 'exercises.manage';
+ if(path.startsWith('/api/settings/')||path.startsWith('/api/revenue'))return 'settings.manage';
  if(method==='GET')return null;
- const deny=(action,section,motif)=>denyRole(env,bankId,s,action,section,motif);
- if(path==='/api/client'&&method==='POST'){return null;}
- if(path==='/api/client/update'&&method==='POST'){return null;}
- if(path==='/api/client/delete'||path==='/api/account/delete'||path==='/api/move/delete'||path.includes('/delete')){
-  return deny('Suppression refusée','Sécurité','Les agents n’ont aucun droit de suppression');
- }
- if(path==='/api/account'&&method==='POST'){return null;}
- if(path==='/api/move'&&method==='POST'){return null;}
- return deny('Action refusée','Sécurité',`Route non autorisée pour ce rôle : ${path}`);
+ return '__DENY__';
+}
+async function enforceRoleApiAccess(env,bankId,s,path,request){
+ const required=await permissionForRequest(path,request);if(required===null)return null;
+ if(required==='__DENY__')return denyRole(env,bankId,s,'Route interdite','Sécurité',`Route non autorisée : ${path}`,'',path);
+ if(hasPermission(s,required))return null;
+ if(path==='/api/client/update'&&hasPermission(s,'clients.update.basic'))return null;
+ return denyRole(env,bankId,s,'Action refusée','Sécurité',`Permission absente pour ${path}`,required,path);
 }
 async function createSession(env,payload){const token=crypto.randomUUID().replace(/-/g,'')+crypto.randomUUID().replace(/-/g,'');await env.KV.put('session:'+token,JSON.stringify({...payload,issuedAt:Date.now()}),{expirationTtl:SESSION_TTL});return token;}
 async function getSession(req,env){
@@ -525,12 +575,13 @@ async function getSession(req,env){
  }
  if(s.role!=='bank'||!s.bankId){await env.KV.delete('session:'+token);return null;}
  if(s.userId){
-  const u=await env.DB.prepare('SELECT bank_id,name,login,role,status,auth_version FROM users WHERE id=? LIMIT 1').bind(s.userId).first();
-  if(!u||String(u.bank_id)!==String(s.bankId)||String(u.status||'Actif')!=='Actif'||Number(u.auth_version||1)!==Number(s.authVersion||1)){await env.KV.delete('session:'+token);return null;}
-  return {...s,userName:u.name||u.login,userLogin:u.login,userRole:u.role,token};
+  const u=await env.DB.prepare('SELECT bank_id,name,login,role,status,permissions,auth_version,is_deleted FROM users WHERE id=? LIMIT 1').bind(s.userId).first();
+  if(!u||String(u.bank_id)!==String(s.bankId)||String(u.status||'Actif')!=='Actif'||Number(u.is_deleted||0)===1||Number(u.auth_version||1)!==Number(s.authVersion||1)){await env.KV.delete('session:'+token);return null;}
+  const bankState=await env.DB.prepare('SELECT status FROM banks WHERE id=? LIMIT 1').bind(s.bankId).first();if(!bankState||!['Actif','Expiré'].includes(String(bankState.status||'Actif'))){await env.KV.delete('session:'+token);return null;}
+  return {...s,userName:u.name||u.login,userLogin:u.login,userRole:u.role,userPermissions:u.permissions,token};
  }
  const b=await env.DB.prepare('SELECT id,manager,login,status,auth_version FROM banks WHERE id=? LIMIT 1').bind(s.bankId).first();
- if(!b||Number(b.auth_version||1)!==Number(s.authVersion||1)){await env.KV.delete('session:'+token);return null;}
+ if(!b||String(b.status||'Actif')==='Suspendu'||Number(b.auth_version||1)!==Number(s.authVersion||1)){await env.KV.delete('session:'+token);return null;}
  return {...s,userName:b.manager||'Administrateur banque',userLogin:b.login,userRole:'Administrateur banque',token};
 }
 async function requireSession(req,env){const s=await getSession(req,env);if(!s)throw json({error:'Session expirée. Reconnectez-vous.'},401,{'set-cookie':clearSessionCookie(req)});return s;}
@@ -557,42 +608,39 @@ function bankListSelect(){return "SELECT id,name,manager,contact,address,login,s
 
 async function bankPayload(env,bankId,session={}){
  const bank=await env.DB.prepare('SELECT id,name,manager,contact,address,email,slogan,logo,stamp,signature,primary_color,secondary_color,footer_text,legal_mentions,cga_conditions,currency,country,city,login,status,subscription,subscription_started_at,subscription_expires_at,subscription_updated_at,created_at FROM banks WHERE id=?').bind(bankId).first();
- if(bank)Object.assign(bank,subscriptionInfo(bank));
- await seedDefaultCharges(env,bankId);
- await ensureCompanyAccount(env,bankId);
-const clients=await env.DB.prepare("SELECT id,bank_id,name,contact,job,address,piece,client_type,client_details,photo_logo,is_blocked,is_deleted,created_at FROM clients WHERE bank_id=? AND COALESCE(is_deleted,0)=0 ORDER BY created_at DESC").bind(bankId).all();
- const clientRows=(clients.results||[]).map(c=>({...c,photo_logo:isClientMediaRef(c.photo_logo)?clientMediaPublicUrl(c.id):String(c.photo_logo||'')}));
- const accounts=await env.DB.prepare("SELECT * FROM accounts WHERE bank_id=? AND COALESCE(is_deleted,0)=0 AND lower(COALESCE(status,'actif')) NOT LIKE '%supprim%' AND lower(COALESCE(status,'actif')) NOT LIKE '%delete%' AND lower(COALESCE(status,'actif')) NOT LIKE '%desactiv%' AND lower(COALESCE(status,'actif')) NOT LIKE '%archive%' AND lower(COALESCE(status,'actif')) NOT LIKE '%ferme%' AND lower(COALESCE(status,'actif')) NOT LIKE '%clotur%' AND lower(COALESCE(status,'actif')) NOT LIKE '%inactif%' ORDER BY created_at DESC").bind(bankId).all();
- const moves=await env.DB.prepare("SELECT m.* FROM moves m JOIN accounts a ON a.id=m.account_id AND a.bank_id=m.bank_id WHERE m.bank_id=? AND COALESCE(a.is_deleted,0)=0 AND lower(COALESCE(a.status,'actif')) NOT LIKE '%supprim%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%delete%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%desactiv%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%archive%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%ferme%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%clotur%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%inactif%' ORDER BY m.created_at DESC LIMIT 1000").bind(bankId).all();
- const users=await env.DB.prepare('SELECT id,bank_id,name,login,role,status,permissions,last_login,created_at FROM users WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const logs=await env.DB.prepare('SELECT * FROM logs WHERE bank_id=? ORDER BY created_at DESC LIMIT 300').bind(bankId).all();
- const charge_bases=await env.DB.prepare('SELECT * FROM charge_bases WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const obligations=await env.DB.prepare('SELECT * FROM obligations WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const reset_requests=await env.DB.prepare('SELECT * FROM reset_requests WHERE bank_id=? ORDER BY created_at DESC LIMIT 100').bind(bankId).all();
- const account_types=await env.DB.prepare('SELECT * FROM account_types WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const movement_types=await env.DB.prepare('SELECT * FROM movement_types WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const manual_revenues=await env.DB.prepare('SELECT * FROM manual_revenues WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const ignored_revenues=await env.DB.prepare('SELECT * FROM ignored_revenues WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
- const management_settings=await managementSettings(env,bankId);
- const security_logs=await env.DB.prepare('SELECT * FROM security_logs WHERE bank_id=? ORDER BY created_at DESC LIMIT 200').bind(bankId).all();
- let payload={bank,user:{id:session.userId||'',name:session.userName||bank.manager||'Administrateur banque',login:session.userLogin||bank.login||'',role:roleLabel(session.userRole||'Administrateur banque'),role_key:sessionRoleKey(session),permissions:sessionPermissions(session),status:'Actif',last_login:session.lastLogin||''},clients:clientRows,accounts:accounts.results||[],moves:moves.results||[],users:users.results||[],logs:logs.results||[],charge_bases:charge_bases.results||[],obligations:obligations.results||[],reset_requests:reset_requests.results||[],account_types:account_types.results||[],movement_types:movement_types.results||[],manual_revenues:manual_revenues.results||[],ignored_revenues:ignored_revenues.results||[],security_logs:security_logs.results||[],management_settings};
- const rk=sessionRoleKey(session);
- if(!['super_admin','admin_bank'].includes(rk)){
-  const perms=sessionPermissions(session);
-  payload.users=[]; payload.security_logs=[]; payload.obligations=[]; payload.manual_revenues=[]; payload.ignored_revenues=[]; payload.charge_bases=[]; payload.logs=[];
-  let allowedMoves=[];
-  if(perms.includes('mouvements_view')) allowedMoves=payload.moves||[];
-  else {
-   const uid=String(session.userId||'');
-   if(perms.includes('caisse')) allowedMoves=allowedMoves.concat((payload.moves||[]).filter(m=>String(m.created_by||'')===uid));
-   if(perms.includes('credit')){
-    const creditIds=new Set((payload.accounts||[]).filter(a=>norm(a.type).includes('credit')).map(a=>String(a.id)));
-    allowedMoves=allowedMoves.concat((payload.moves||[]).filter(m=>creditIds.has(String(m.account_id||''))));
-   }
-  }
-  const seen=new Set(); payload.moves=allowedMoves.filter(m=>{const id=String(m.id||'');if(seen.has(id))return false;seen.add(id);return true;});
+ if(bank)Object.assign(bank,subscriptionInfo(bank));await seedDefaultCharges(env,bankId);await ensureCompanyAccount(env,bankId);
+ const clientsQ=await env.DB.prepare("SELECT id,bank_id,name,contact,job,address,piece,client_type,client_details,photo_logo,is_blocked,is_deleted,created_at FROM clients WHERE bank_id=? ORDER BY created_at DESC").bind(bankId).all();
+ const allClients=(clientsQ.results||[]).map(c=>({...c,photo_logo:isClientMediaRef(c.photo_logo)?clientMediaPublicUrl(c.id):String(c.photo_logo||'')}));
+ const accountsQ=await env.DB.prepare("SELECT * FROM accounts WHERE bank_id=? ORDER BY created_at DESC").bind(bankId).all();const allAccounts=accountsQ.results||[];
+ const movesQ=await env.DB.prepare("SELECT m.* FROM moves m JOIN accounts a ON a.id=m.account_id AND a.bank_id=m.bank_id WHERE m.bank_id=? AND COALESCE(m.is_voided,0)=0 ORDER BY m.created_at DESC LIMIT 1500").bind(bankId).all();const allMoves=movesQ.results||[];
+ const voidedQ=await env.DB.prepare("SELECT * FROM moves WHERE bank_id=? AND COALESCE(is_voided,0)=1 ORDER BY voided_at DESC LIMIT 300").bind(bankId).all();
+ const usersQ=await env.DB.prepare("SELECT id,bank_id,name,login,role,status,permissions,last_login,is_deleted,created_at FROM users WHERE bank_id=? AND COALESCE(is_deleted,0)=0 ORDER BY created_at DESC").bind(bankId).all();
+ const logsQ=await env.DB.prepare('SELECT * FROM logs WHERE bank_id=? ORDER BY created_at DESC LIMIT 300').bind(bankId).all();
+ const chargeQ=await env.DB.prepare('SELECT * FROM charge_bases WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
+ const obligationsQ=await env.DB.prepare('SELECT * FROM obligations WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
+ const resetQ=await env.DB.prepare('SELECT * FROM reset_requests WHERE bank_id=? ORDER BY created_at DESC LIMIT 100').bind(bankId).all();
+ const accountTypesQ=await env.DB.prepare('SELECT * FROM account_types WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
+ const movementTypesQ=await env.DB.prepare('SELECT * FROM movement_types WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
+ const manualQ=await env.DB.prepare('SELECT * FROM manual_revenues WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
+ const ignoredQ=await env.DB.prepare('SELECT * FROM ignored_revenues WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
+ const securityQ=await env.DB.prepare('SELECT * FROM security_logs WHERE bank_id=? ORDER BY created_at DESC LIMIT 300').bind(bankId).all();
+ const requestQ=await env.DB.prepare('SELECT * FROM operation_requests WHERE bank_id=? ORDER BY created_at DESC LIMIT 300').bind(bankId).all();
+ const management_settings=await managementSettings(env,bankId);const rk=sessionRoleKey(session);const perms=sessionPermissions(session);const uidValue=String(session.userId||'');
+ const user={id:uidValue,name:session.userName||bank.manager||'Utilisateur',login:session.userLogin||bank.login||'',role:roleLabel(session.userRole||'Administrateur banque'),role_key:rk,permissions:perms,status:'Actif',last_login:session.lastLogin||'',readonly:rk==='auditeur'};
+ const activeClients=allClients.filter(c=>Number(c.is_deleted||0)!==1);const activeAccounts=allAccounts.filter(a=>Number(a.is_deleted||0)!==1&&!norm(a.status).includes('supprim'));
+ const limitedBank={id:bank.id,name:bank.name,manager:bank.manager,contact:bank.contact,address:bank.address,email:bank.email,logo:bank.logo,currency:bank.currency,city:bank.city,country:bank.country,status:bank.status,subscription:bank.subscription,subscription_label:bank.subscription_label,subscription_state:bank.subscription_state,days_remaining:bank.days_remaining};
+ if(rk==='admin_bank')return {bank,user,clients:activeClients,deleted_clients:allClients.filter(c=>Number(c.is_deleted||0)===1),accounts:activeAccounts,deleted_accounts:allAccounts.filter(a=>Number(a.is_deleted||0)===1),moves:allMoves,voided_moves:voidedQ.results||[],users:usersQ.results||[],logs:logsQ.results||[],charge_bases:chargeQ.results||[],obligations:obligationsQ.results||[],reset_requests:resetQ.results||[],account_types:accountTypesQ.results||[],movement_types:movementTypesQ.results||[],manual_revenues:manualQ.results||[],ignored_revenues:ignoredQ.results||[],security_logs:securityQ.results||[],operation_requests:requestQ.results||[],management_settings};
+ if(rk==='agent_caisse'){
+  const accounts=activeAccounts.filter(a=>!isCompanyAccountRow(a,bankId)&&!isCreditAccountType(a.type));const ids=new Set(accounts.map(a=>String(a.id)));const ownMoves=allMoves.filter(m=>String(m.created_by||'')===uidValue&&ids.has(String(m.account_id||'')));
+  return {bank:limitedBank,user,clients:activeClients,accounts,moves:ownMoves,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>['depot','dépôt','retrait'].includes(norm(t.name))||norm(t.name).includes('frais')),management_settings};
  }
- return payload;
+ if(rk==='agent_credit'){
+  const accounts=activeAccounts.filter(a=>isCreditAccountType(a.type));const ids=new Set(accounts.map(a=>String(a.id)));const moves=allMoves.filter(m=>ids.has(String(m.account_id||'')));
+  const sourceAccount=allAccounts.find(a=>isCompanyAccountRow(a,bankId));const credit_sources=sourceAccount?allMoves.filter(m=>String(m.account_id||'')===String(sourceAccount.id)&&isCompanyApprovisionnementType(m.type)).map(m=>({id:m.id,account_id:m.account_id,type:m.type,description:m.description,amount:m.amount,balance_after:m.balance_after,created_at:m.created_at})):[];
+  const credit_source_account=sourceAccount?{id:sourceAccount.id,client_id:sourceAccount.client_id,number:sourceAccount.number,type:sourceAccount.type,status:sourceAccount.status,is_blocked:sourceAccount.is_blocked}:null;
+  return {bank:limitedBank,user,clients:activeClients,accounts,moves,credit_sources,credit_source_account,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>norm(t.name).includes('credit')||norm(t.name).includes('recouvrement')||norm(t.name).includes('penalite')),management_settings};
+ }
+ const auditAccounts=activeAccounts.filter(a=>!isCompanyAccountRow(a,bankId));const auditIds=new Set(auditAccounts.map(a=>String(a.id)));return {bank:limitedBank,user,clients:activeClients,accounts:auditAccounts,moves:allMoves.filter(m=>auditIds.has(String(m.account_id||''))),account_types:[],movement_types:[],management_settings,report_scope:'limited'};
 }
 async function handleApi(request,env,path){
  try{
@@ -629,12 +677,12 @@ async function handleApi(request,env,path){
     await clearAccountLoginFailures(env,request,login);const ctx={role:'bank',bankId:bank.id,userRole:'Administrateur banque',userName:bank.manager||'Administrateur banque',userLogin:bank.login,userId:'',authVersion:Number(bank.auth_version||1)};const token=await createSession(env,ctx);
     await addLog(env,bank.id,'Connexion administrateur');await addSecurityLog(env,bank.id,ctx,'Connexion','Connexion','autorisé','');return json({ok:true,role:'bank',bankId:bank.id,user:{name:ctx.userName,role:roleLabel(ctx.userRole)},subscription:sub.subscription,days_remaining:sub.days_remaining},200,{'set-cookie':sessionCookie(request,token)});
    }
-   const candidates=(await env.DB.prepare('SELECT u.*,b.status AS bank_status,b.subscription,b.subscription_started_at,b.subscription_expires_at,b.created_at AS bank_created_at FROM users u JOIN banks b ON b.id=u.bank_id WHERE u.login=? LIMIT 2').bind(login).all()).results||[];
+   const candidates=(await env.DB.prepare('SELECT u.*,b.status AS bank_status,b.subscription,b.subscription_started_at,b.subscription_expires_at,b.created_at AS bank_created_at FROM users u JOIN banks b ON b.id=u.bank_id WHERE u.login=? AND COALESCE(u.is_deleted,0)=0 LIMIT 2').bind(login).all()).results||[];
    if(candidates.length!==1)return failure();const user=candidates[0];const verified=await verifyPassword(password,user.pass);if(!verified.ok)return failure();
    if(verified.needsUpgrade){const upgraded=await hashPassword(password);await env.DB.prepare('UPDATE users SET pass=? WHERE id=? AND bank_id=?').bind(upgraded,user.id,user.bank_id).run();}
    if(String(user.status||'Actif')!=='Actif')return json({error:'Utilisateur bloqué. Contactez l’administrateur.'},403);if(user.bank_status==='Suspendu')return json({error:'Banque suspendue.'},403);
    const bankForSub={status:user.bank_status,subscription:user.subscription,subscription_started_at:user.subscription_started_at,subscription_expires_at:user.subscription_expires_at,created_at:user.bank_created_at};const sub=subscriptionInfo(bankForSub);if(sub.expired)return json({error:'Abonnement expiré. Contactez le Super Admin pour activer la version Business.'},403);
-   await clearAccountLoginFailures(env,request,login);await env.DB.prepare("UPDATE users SET last_login=datetime('now') WHERE id=? AND bank_id=?").bind(user.id,user.bank_id).run();const ctx={role:'bank',bankId:user.bank_id,userRole:user.role||'Agent consultation / auditeur',userName:user.name||user.login,userLogin:user.login,userId:user.id,userPermissions:safePermissionsPayload(user.permissions,user.role||'Agent consultation / auditeur'),lastLogin:new Date().toISOString(),authVersion:Number(user.auth_version||1)};const token=await createSession(env,ctx);
+   await clearAccountLoginFailures(env,request,login);await env.DB.prepare("UPDATE users SET last_login=datetime('now') WHERE id=? AND bank_id=?").bind(user.id,user.bank_id).run();const ctx={role:'bank',bankId:user.bank_id,userRole:user.role||'Agent consultation / auditeur',userName:user.name||user.login,userLogin:user.login,userId:user.id,userPermissions:user.permissions,lastLogin:new Date().toISOString(),authVersion:Number(user.auth_version||1)};const token=await createSession(env,ctx);
    await addSecurityLog(env,user.bank_id,ctx,'Connexion','Connexion','autorisé','');await addLog(env,user.bank_id,'Connexion utilisateur : '+(user.name||user.login)+' ('+roleLabel(user.role)+')');return json({ok:true,role:'bank',bankId:user.bank_id,user:{id:user.id,name:user.name||user.login,role:roleLabel(user.role),permissions:safePermissionsPayload(user.permissions,user.role)},subscription:sub.subscription,days_remaining:sub.days_remaining},200,{'set-cookie':sessionCookie(request,token)});
   }
 
@@ -766,6 +814,24 @@ async function handleApi(request,env,path){
    await addSecurityLog(env,bankId,s,'Suppression message','Boîte de réception et d’envois','autorisé',row.subject||'');
    return json({ok:true});
   }
+  if(path==='/api/correction-requests'&&request.method==='GET'){
+   const all=(await env.DB.prepare('SELECT r.*,m.type AS movement_type,m.amount AS movement_amount,m.account_id FROM operation_requests r LEFT JOIN moves m ON m.id=r.movement_id AND m.bank_id=r.bank_id WHERE r.bank_id=? ORDER BY r.created_at DESC LIMIT 300').bind(bankId).all()).results||[];
+   return json({items:sessionRoleKey(s)==='admin_bank'?all:all.filter(x=>String(x.requested_by)===String(s.userId||''))});
+  }
+  if(path==='/api/correction-requests'&&request.method==='POST'){
+   const r=await body(request);const movementId=String(r.movement_id||'').trim();const requestType=norm(r.request_type||'correction');const reason=String(r.reason||'').trim();
+   if(!movementId||!['correction','annulation','verification','vérification','reimpression exceptionnelle','réimpression exceptionnelle'].includes(requestType)||reason.length<5)return json({error:'Mouvement, type et motif détaillé obligatoires.'},400);
+   const movement=await env.DB.prepare('SELECT id FROM moves WHERE id=? AND bank_id=? AND COALESCE(is_voided,0)=0').bind(movementId,bankId).first();if(!movement)return json({error:'Mouvement introuvable dans votre banque.'},404);
+   await env.DB.prepare('INSERT INTO operation_requests(id,bank_id,movement_id,requested_by,requested_by_name,requested_by_role,request_type,reason,status) VALUES(?,?,?,?,?,?,?,?,?)').bind(uid('REQ'),bankId,movementId,String(s.userId||'BANK_ADMIN'),String(s.userName||''),roleLabel(s.userRole||''),requestType,reason,'pending').run();
+   await addSecurityLog(env,bankId,s,'Demande de correction','Mouvements','autorisé',reason,{permission:'correction.request',route:path,resource:movementId});return json({ok:true});
+  }
+  if(path==='/api/correction-requests/review'&&request.method==='POST'){
+   const r=await body(request);const id=String(r.id||'');const status=norm(r.status||'');if(!id||!['approved','rejected','executed','approuvee','approuvée','refusee','refusée','executee','exécutée'].includes(status))return json({error:'Décision invalide.'},400);
+   const row=await env.DB.prepare('SELECT * FROM operation_requests WHERE id=? AND bank_id=?').bind(id,bankId).first();if(!row)return json({error:'Demande introuvable.'},404);
+   const canonical=status.startsWith('appro')?'approved':status.startsWith('ref')?'rejected':status.startsWith('exec')?'executed':status;
+   await env.DB.prepare("UPDATE operation_requests SET status=?,reviewed_by=?,reviewed_at=datetime('now'),review_note=? WHERE id=? AND bank_id=?").bind(canonical,String(s.userName||'Administrateur banque'),String(r.review_note||''),id,bankId).run();
+   await addSecurityLog(env,bankId,s,'Traitement demande de correction','Mouvements','autorisé',canonical,{permission:'correction.review',route:path,resource:row.movement_id});return json({ok:true});
+  }
   if(path==='/api/client/media'&&request.method==='GET'){
    const clientId=String(new URL(request.url).searchParams.get('id')||'').trim();if(!clientId)return new Response('Image introuvable.',{status:404});
    const row=await env.DB.prepare('SELECT id,photo_logo FROM clients WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=0').bind(clientId,bankId).first();
@@ -783,7 +849,7 @@ async function handleApi(request,env,path){
 
   if(path==='/api/security/log'&&request.method==='POST'){
    const g=await body(request);
-   await env.DB.prepare('INSERT INTO security_logs(id,bank_id,action,section,result,agent,role,motif,user_id) VALUES(?,?,?,?,?,?,?,?,?)').bind(uid('SEC'),bankId,String(g.action||''),String(g.section||''),String(g.result||''),String(g.agent||s.userName||'Administrateur'),roleLabel(s.userRole||'Administrateur banque'),String(g.motif||''),String(s.userId||'')).run();
+   await env.DB.prepare('INSERT INTO security_logs(id,bank_id,action,section,result,agent,role,motif,user_id) VALUES(?,?,?,?,?,?,?,?,?)').bind(uid('SEC'),bankId,String(g.action||''),String(g.section||''),String(g.result||''),String(s.userName||'Utilisateur'),roleLabel(s.userRole||'Administrateur banque'),String(g.motif||''),String(s.userId||'')).run();
    await addLog(env,bankId,'Sécurité : '+String(g.action||'action')+' — '+String(g.result||'journalisée'));
    return json({ok:true});
   }
@@ -838,8 +904,9 @@ async function handleApi(request,env,path){
    return json({ok:true});
   }
   if(path==='/api/client/update'&&request.method==='POST'){
+   const limitedClientUpdate=sessionRoleKey(s)!=='admin_bank'&&hasPermission(s,'clients.update.basic');
    if(Number(request.headers.get('content-length')||0)>CLIENT_REQUEST_MAX_BYTES)return json({error:'Le formulaire client est trop volumineux.'},413);
-   const c=await body(request);if(!c.id)return json({error:'Client obligatoire.'},400);
+   const c=await body(request);if(limitedClientUpdate){delete c.photo_logo;delete c.client_type;const raw=parseClientDetails(c.client_details);const allowed={typeClient:raw.typeClient||'personne_physique',nom:raw.nom||c.name||'',prenoms:raw.prenoms||'',dateNaissance:raw.dateNaissance||'',sexe:raw.sexe||'',telephone:raw.telephone||c.contact||'',commune:raw.commune||'',villageQuartier:raw.villageQuartier||'',numeroPiece:raw.numeroPiece||c.piece||'',profession:raw.profession||c.job||'',observation:raw.observation||''};c.client_details=JSON.stringify(allowed);}if(!c.id)return json({error:'Client obligatoire.'},400);
    const existing=await env.DB.prepare('SELECT id,photo_logo FROM clients WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=0').bind(c.id,bankId).first();
    if(!existing)return json({error:'Client introuvable.'},404);
    const clean=normalizeClientPayload(c,'');
@@ -853,18 +920,11 @@ async function handleApi(request,env,path){
   }
   if(path==='/api/client/block'&&request.method==='POST'){const c=await body(request); if(!c.id)return json({error:'Client obligatoire.'},400); const b=Number(c.is_blocked||0)?1:0; await env.DB.prepare('UPDATE clients SET is_blocked=? WHERE id=? AND bank_id=?').bind(b,c.id,bankId).run(); await addLog(env,bankId,b?'Client bloqué':'Client débloqué'); return json({ok:true});}
   if(path==='/api/client/delete'&&request.method==='POST'){
-   const c=await body(request); if(!c.id)return json({error:'Client obligatoire.'},400);
-   const row=await env.DB.prepare('SELECT * FROM clients WHERE id=? AND bank_id=?').bind(c.id,bankId).first();
-   if(!row)return json({error:'Client introuvable.'},404);
-   if(isCompanyClientRow(row,bankId))return json({error:'Le client entreprise de la banque est protégé : suppression impossible.'},403);
-   const countAcc=await env.DB.prepare('SELECT COUNT(*) AS n FROM accounts WHERE client_id=? AND bank_id=?').bind(c.id,bankId).first();
-   const countMov=await env.DB.prepare('SELECT COUNT(*) AS n FROM moves WHERE bank_id=? AND account_id IN (SELECT id FROM accounts WHERE client_id=? AND bank_id=?)').bind(bankId,c.id,bankId).first();
-   await env.DB.prepare('DELETE FROM moves WHERE bank_id=? AND account_id IN (SELECT id FROM accounts WHERE client_id=? AND bank_id=?)').bind(bankId,c.id,bankId).run();
-   await env.DB.prepare('DELETE FROM accounts WHERE client_id=? AND bank_id=?').bind(c.id,bankId).run();
-   await deleteClientMedia(env,row.photo_logo||'');
-   await env.DB.prepare('DELETE FROM clients WHERE id=? AND bank_id=?').bind(c.id,bankId).run();
-   await addLog(env,bankId,'Client supprimé définitivement avec '+Number((countAcc&&countAcc.n)||0)+' compte(s) et '+Number((countMov&&countMov.n)||0)+' mouvement(s) liés');
-   return json({ok:true,deleted_client:true,deleted_accounts:Number((countAcc&&countAcc.n)||0),deleted_moves:Number((countMov&&countMov.n)||0)});
+   const c=await body(request);if(!c.id)return json({error:'Client obligatoire.'},400);const row=await env.DB.prepare('SELECT * FROM clients WHERE id=? AND bank_id=?').bind(c.id,bankId).first();if(!row)return json({error:'Client introuvable.'},404);if(isCompanyClientRow(row,bankId))return json({error:'Le client entreprise de la banque est protégé.'},403);
+   await env.DB.prepare("UPDATE clients SET is_deleted=1 WHERE id=? AND bank_id=?").bind(c.id,bankId).run();await env.DB.prepare("UPDATE accounts SET is_deleted=1,status='Archivé' WHERE client_id=? AND bank_id=?").bind(c.id,bankId).run();await addSecurityLog(env,bankId,s,'Suppression logique client','Clients','autorisé','Historique financier conservé',{permission:'clients.delete',route:path,resource:c.id});return json({ok:true,logical_delete:true});
+  }
+  if(path==='/api/client/restore'&&request.method==='POST'){
+   const c=await body(request);if(!c.id)return json({error:'Client obligatoire.'},400);const row=await env.DB.prepare('SELECT id FROM clients WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=1').bind(c.id,bankId).first();if(!row)return json({error:'Client archivé introuvable.'},404);await env.DB.prepare('UPDATE clients SET is_deleted=0 WHERE id=? AND bank_id=?').bind(c.id,bankId).run();await env.DB.prepare("UPDATE accounts SET is_deleted=0,status=CASE WHEN status='Archivé' THEN 'Actif' ELSE status END WHERE client_id=? AND bank_id=?").bind(c.id,bankId).run();await addSecurityLog(env,bankId,s,'Restauration client','Clients','autorisé','',{permission:'clients.restore',route:path,resource:c.id});return json({ok:true});
   }
   if(path==='/api/account'&&request.method==='POST'){await rejectIfExerciseClosed(env,bankId);
    const a=await body(request);
@@ -936,18 +996,11 @@ async function handleApi(request,env,path){
   }
 
   if(path==='/api/account/delete'&&request.method==='POST'){await rejectIfExerciseClosed(env,bankId);
-   const a=await body(request); if(!a.id)return json({error:'Compte obligatoire.'},400);
-   const acc=await env.DB.prepare('SELECT * FROM accounts WHERE id=? AND bank_id=?').bind(a.id,bankId).first();
-   if(!acc)return json({error:'Compte introuvable.'},404);
-   if(isCompanyAccountRow(acc,bankId))return json({error:'Le compte entreprise de la banque est protégé : suppression impossible.'},403);
-   const countRow=await env.DB.prepare('SELECT COUNT(*) AS n FROM moves WHERE account_id=? AND bank_id=?').bind(a.id,bankId).first();
-   const nbMoves=Number((countRow&&countRow.n)||0);
-   await env.DB.prepare('DELETE FROM moves WHERE account_id=? AND bank_id=?').bind(a.id,bankId).run();
-   await env.DB.prepare('DELETE FROM accounts WHERE id=? AND bank_id=?').bind(a.id,bankId).run();
-   await addLog(env,bankId,'Compte supprimé définitivement du système avec '+nbMoves+' mouvement(s) lié(s) : '+(acc.number||a.id));
-   return json({ok:true,deleted_account:true,deleted_moves:nbMoves});
+   const a=await body(request);if(!a.id)return json({error:'Compte obligatoire.'},400);const acc=await env.DB.prepare('SELECT * FROM accounts WHERE id=? AND bank_id=?').bind(a.id,bankId).first();if(!acc)return json({error:'Compte introuvable.'},404);if(isCompanyAccountRow(acc,bankId))return json({error:'Le compte entreprise automatique est protégé.'},403);await env.DB.prepare("UPDATE accounts SET is_deleted=1,status='Archivé' WHERE id=? AND bank_id=?").bind(a.id,bankId).run();await addSecurityLog(env,bankId,s,'Suppression logique compte','Comptes','autorisé','Mouvements conservés',{permission:'accounts.delete',route:path,resource:a.id});return json({ok:true,logical_delete:true});
   }
-
+  if(path==='/api/account/restore'&&request.method==='POST'){
+   const a=await body(request);if(!a.id)return json({error:'Compte obligatoire.'},400);const acc=await env.DB.prepare('SELECT id FROM accounts WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=1').bind(a.id,bankId).first();if(!acc)return json({error:'Compte archivé introuvable.'},404);await env.DB.prepare("UPDATE accounts SET is_deleted=0,status=CASE WHEN status='Archivé' THEN 'Actif' ELSE status END WHERE id=? AND bank_id=?").bind(a.id,bankId).run();await addSecurityLog(env,bankId,s,'Restauration compte','Comptes','autorisé','',{permission:'accounts.restore',route:path,resource:a.id});return json({ok:true});
+  }
   if(path==='/api/account/block'&&request.method==='POST'){await rejectIfExerciseClosed(env,bankId);
    const a=await body(request); if(!a.id)return json({error:'Compte obligatoire.'},400);
    const acc=await env.DB.prepare('SELECT * FROM accounts WHERE id=? AND bank_id=?').bind(a.id,bankId).first();
@@ -1048,32 +1101,9 @@ async function handleApi(request,env,path){
   }
 
   if(path==='/api/move/delete'&&request.method==='POST'){await rejectIfExerciseClosed(env,bankId);
-   const m=await body(request); if(!m.id)return json({error:'Opération obligatoire.'},400);
-   const mv=await env.DB.prepare('SELECT * FROM moves WHERE id=? AND bank_id=?').bind(m.id,bankId).first();
-   if(!mv)return json({error:'Opération introuvable.'},404);
-   const acc=await env.DB.prepare('SELECT * FROM accounts WHERE id=? AND bank_id=?').bind(mv.account_id,bankId).first();
-   let mustRefreshCompany=false;
-   if(acc){
-    const mvNorm=norm(mv.type); const accIsCredit=norm(acc.type).includes('credit');
-    const accIsCompany=isCompanyAccountRow(acc,bankId);
-    const mvIsOperationFee=(mvNorm.startsWith('frais')&&mvNorm.includes('operation'));
-    const debit=(mvNorm==='retrait'||mvNorm==='decaissement'||mvNorm==='paiement credit'||mvNorm==='paiement de credit'||(mvNorm.startsWith('frais')&&mvNorm!=='frais de penalites de retard'&&mvNorm!=='frais de recouvrement'&&!(accIsCredit&&mvIsOperationFee)));
-    const increaseDebt=(accIsCredit&&(mvNorm==='frais de recouvrement'||mvNorm==='frais de penalites de retard'||mvIsOperationFee));
-    if(!accIsCompany){
-     const corrected=Number(acc.balance)+(debit?Number(mv.amount):(increaseDebt?-Number(mv.amount):-Number(mv.amount)));
-     await env.DB.prepare('UPDATE accounts SET balance=? WHERE id=? AND bank_id=?').bind(corrected,acc.id,bankId).run();
-    }
-    if(accIsCredit&&isCreditPaymentTypeServer(mv.type)){
-     const marker=companyCreditRepaymentSourceMarker(mv.id);
-     await env.DB.prepare('DELETE FROM moves WHERE bank_id=? AND account_id=? AND description LIKE ?').bind(bankId,companyAccountId(bankId),'%'+marker+'%').run();
-     mustRefreshCompany=true;
-    }
-    if(accIsCompany)mustRefreshCompany=true;
-   }
-   await env.DB.prepare('DELETE FROM moves WHERE id=? AND bank_id=?').bind(m.id,bankId).run();
-   if(mustRefreshCompany){await syncCreditRepaymentsToCompanyAccount(env,bankId);await updateCompanyAccountStoredBalance(env,bankId);}
-   await addLog(env,bankId,'Opération supprimée par administrateur');
-   return json({ok:true});
+   const m=await body(request);if(!m.id)return json({error:'Opération obligatoire.'},400);const mv=await env.DB.prepare('SELECT * FROM moves WHERE id=? AND bank_id=? AND COALESCE(is_voided,0)=0').bind(m.id,bankId).first();if(!mv)return json({error:'Opération introuvable ou déjà annulée.'},404);const acc=await env.DB.prepare('SELECT * FROM accounts WHERE id=? AND bank_id=?').bind(mv.account_id,bankId).first();
+   if(acc){const t=norm(mv.type);const debit=(t==='retrait'||t==='decaissement'||t.includes('paiement credit')||(t.startsWith('frais')&&!t.includes('penalite')&&!t.includes('recouvrement')));const corrected=Number(acc.balance)+(debit?Number(mv.amount):-Number(mv.amount));await env.DB.prepare('UPDATE accounts SET balance=? WHERE id=? AND bank_id=?').bind(corrected,acc.id,bankId).run();}
+   await env.DB.prepare("UPDATE moves SET is_voided=1,voided_by=?,voided_at=datetime('now'),void_reason=? WHERE id=? AND bank_id=?").bind(String(s.userName||'Administrateur banque'),String(m.reason||'Annulation administrateur sécurisée'),m.id,bankId).run();await addSecurityLog(env,bankId,s,'Annulation logique mouvement','Mouvements','autorisé',String(m.reason||''),{permission:'moves.correct',route:path,resource:m.id});await addLog(env,bankId,'Opération annulée logiquement : '+m.id);return json({ok:true,logical_void:true});
   }
   if(path==='/api/settings/account-type'&&request.method==='POST'){
    const t=await body(request); const name=String(t.name||'').trim(); if(!name)return json({error:'Nom obligatoire.'},400);
@@ -1140,7 +1170,7 @@ async function handleApi(request,env,path){
    const u=await body(request);const login=String(u.login||'').trim(),password=String(u.pass||'');if(!login||!password)return json({error:'Identifiant et mot de passe obligatoires.'},400);const weak=assertPasswordStrength(password);if(weak)return json({error:weak},400);
    if(canonicalRole(u.role||'')==='admin_bank'||canonicalRole(u.role||'')==='super_admin')return json({error:'La création d’un Administrateur banque ou Super Admin n’est pas autorisée depuis Gestion des utilisateurs.'},403);
    if(loginReserved(env,login)||await loginExists(env,login))return json({error:'Identifiant utilisateur déjà utilisé.'},409);
-   const permissions=JSON.stringify(defaultPermissionsForRole(u.role||'Agent caisse')),passHash=await hashPassword(password);
+   const permissions=JSON.stringify(safePermissionPolicy(u.permissions,u.role||'Agent caisse')),passHash=await hashPassword(password);
    await env.DB.prepare('INSERT INTO users(id,bank_id,name,login,pass,auth_version,role,status,permissions) VALUES(?,?,?,?,?,1,?,?,?)').bind(uid('USR'),bankId,u.name||'',login,passHash,roleLabel(u.role||'Agent caisse'),String(u.status||'Actif'),permissions).run();
    await addSecurityLog(env,bankId,s,'Création utilisateur','Gestion des utilisateurs','autorisé','Accès opérationnel agent, pages sensibles bloquées');return json({ok:true});
   }
@@ -1150,7 +1180,7 @@ async function handleApi(request,env,path){
    if(canonicalRole(u.role||'')==='admin_bank'||canonicalRole(u.role||'')==='super_admin')return json({error:'Le rôle Administrateur banque ne peut pas être attribué depuis cette page.'},403);
    const target=await env.DB.prepare('SELECT * FROM users WHERE id=? AND bank_id=?').bind(u.id,bankId).first();if(!target)return json({error:'Utilisateur introuvable.'},404);if(canonicalRole(target.role||'')==='admin_bank')return json({error:'La modification d’un Administrateur banque est réservée au Super Admin.'},403);
    if(loginReserved(env,login)||await loginExists(env,login,{userId:u.id}))return json({error:'Identifiant déjà utilisé.'},409);
-   const permissions=JSON.stringify(defaultPermissionsForRole(u.role||'Agent caisse')),password=String(u.pass||'');let passHash=target.pass,nextVersion=Number(target.auth_version||1);
+   const permissions=JSON.stringify(safePermissionPolicy(u.permissions,u.role||'Agent caisse')),password=String(u.pass||'');let passHash=target.pass,nextVersion=Number(target.auth_version||1);
    if(password){const weak=assertPasswordStrength(password);if(weak)return json({error:weak},400);passHash=await hashPassword(password);nextVersion+=1;}
    await env.DB.prepare('UPDATE users SET name=?,login=?,pass=?,auth_version=?,role=?,status=?,permissions=? WHERE id=? AND bank_id=?').bind(String(u.name||''),login,passHash,nextVersion,roleLabel(u.role||'Agent caisse'),String(u.status||'Actif'),permissions,u.id,bankId).run();
    await addSecurityLog(env,bankId,s,'Modification utilisateur','Gestion des utilisateurs','autorisé',password?'Mot de passe modifié et sessions invalidées':'Accès opérationnel agent, pages sensibles bloquées');return json({ok:true});
@@ -1163,7 +1193,7 @@ async function handleApi(request,env,path){
   if(path==='/api/user/delete'&&request.method==='POST'){
    if(sessionRoleKey(s)!=='admin_bank')return denyRole(env,bankId,s,'Suppression compte agent refusée','Gestion des utilisateurs','Réservé à l’Administrateur banque');
    const u=await body(request); const row=await env.DB.prepare('SELECT * FROM users WHERE id=? AND bank_id=?').bind(u.id,bankId).first(); if(!row)return json({error:'Utilisateur introuvable.'},404); if(canonicalRole(row.role||'')==='admin_bank'||canonicalRole(row.role||'')==='super_admin')return json({error:'La suppression de ce compte est interdite depuis cette page.'},403);
-   await env.DB.prepare('DELETE FROM users WHERE id=? AND bank_id=?').bind(u.id,bankId).run();
+   await env.DB.prepare("UPDATE users SET is_deleted=1,status='Supprimé',auth_version=COALESCE(auth_version,1)+1 WHERE id=? AND bank_id=?").bind(u.id,bankId).run();
    await addSecurityLog(env,bankId,s,'Suppression compte agent','Gestion des utilisateurs','autorisé',row.name||row.login||''); return json({ok:true});
   }
   if(path==='/api/settings/charge-base'&&request.method==='POST'){const c=await body(request); if(!c.name)return json({error:'Libellé obligatoire.'},400); await env.DB.prepare('INSERT INTO charge_bases(id,bank_id,name,category,percent) VALUES(?,?,?,?,?)').bind(uid('CHG'),bankId,c.name,c.category||'Frais',Number(c.percent||0)).run(); await addLog(env,bankId,'Base de calcul des charges ajoutée : '+c.name); return json({ok:true});}
@@ -1183,4 +1213,15 @@ async function handleApi(request,env,path){
   return json({error:'Route inconnue : '+path},404);
  }catch(e){if(e instanceof Response)return e; return json({error:e && e.message ? e.message : 'Erreur serveur'},500);}
 }
-export default {async fetch(request,env,ctx){const url=new URL(request.url); if(url.pathname.startsWith('/api/'))return handleApi(request,env,url.pathname); return env.ASSETS.fetch(request);}};
+export default {async fetch(request,env,ctx){
+ const url=new URL(request.url);if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
+ const mutation=!['GET','HEAD','OPTIONS'].includes(request.method.toUpperCase());let auditSession=null;let auditRequest=null;
+ if(mutation&&url.pathname!=='/api/security/log'){try{auditRequest=request.clone();if(hasBindings(env)){await ensureSchema(env);auditSession=await getSession(request.clone(),env);}}catch(e){}}
+ const response=await handleApi(request,env,url.pathname);
+ if(auditSession&&auditSession.role==='bank'&&url.pathname!=='/api/logout'&&url.pathname!=='/api/security/log'){
+  try{const permission=await permissionForRequest(url.pathname,auditRequest||request.clone());let resource='';try{const raw=await (auditRequest||request.clone()).clone().json();resource=String(raw.id||raw.accountId||raw.clientId||raw.movement_id||'').slice(0,180);}catch(e){}
+   await addSecurityLog(env,auditSession.bankId,auditSession,request.method+' '+url.pathname,'API',response.ok?'autorisé':'refusé',response.ok?'':('HTTP '+response.status),{permission:permission==='__DENY__'?'':(permission||''),route:url.pathname,resource});
+  }catch(e){}
+ }
+ return response;
+}};

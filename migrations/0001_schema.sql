@@ -82,6 +82,10 @@ CREATE TABLE IF NOT EXISTS moves (
   balance_after REAL NOT NULL,
   created_by TEXT DEFAULT '',
   created_by_role TEXT DEFAULT '',
+  is_voided INTEGER NOT NULL DEFAULT 0,
+  voided_by TEXT DEFAULT '',
+  voided_at TEXT DEFAULT '',
+  void_reason TEXT DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -94,13 +98,14 @@ CREATE TABLE IF NOT EXISTS users (
   auth_version INTEGER NOT NULL DEFAULT 1,
   role TEXT,
   status TEXT NOT NULL DEFAULT 'Actif',
-  permissions TEXT DEFAULT '[]',
+  permissions TEXT DEFAULT '{"allow":[],"deny":[]}',
   last_login TEXT DEFAULT '',
+  is_deleted INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,message TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT (datetime('now')));
-CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,role TEXT DEFAULT '',motif TEXT DEFAULT '',user_id TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,role TEXT DEFAULT '',motif TEXT DEFAULT '',user_id TEXT DEFAULT '',permission TEXT DEFAULT '',route TEXT DEFAULT '',resource TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS charge_bases (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,category TEXT,percent REAL DEFAULT 0,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS obligations (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,amount REAL DEFAULT 0,due_day INTEGER DEFAULT 1,base_type TEXT DEFAULT 'Bénéfice général',base_item TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS reset_requests (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,user_id TEXT,message TEXT,status TEXT DEFAULT 'En attente',created_at TEXT NOT NULL DEFAULT (datetime('now')));
@@ -110,6 +115,22 @@ CREATE TABLE IF NOT EXISTS manual_revenues (id TEXT PRIMARY KEY,bank_id TEXT NOT
 CREATE TABLE IF NOT EXISTS ignored_revenues (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,revenue_key TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS management_settings (bank_id TEXT PRIMARY KEY,year INTEGER NOT NULL,month INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'open',updated_at TEXT NOT NULL DEFAULT (datetime('now')));
 
+CREATE TABLE IF NOT EXISTS operation_requests (
+  id TEXT PRIMARY KEY,
+  bank_id TEXT NOT NULL,
+  movement_id TEXT NOT NULL,
+  requested_by TEXT NOT NULL,
+  requested_by_name TEXT DEFAULT '',
+  requested_by_role TEXT NOT NULL,
+  request_type TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  reviewed_by TEXT DEFAULT '',
+  reviewed_at TEXT DEFAULT '',
+  review_note TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_clients_bank ON clients(bank_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_bank ON accounts(bank_id);
 CREATE INDEX IF NOT EXISTS idx_moves_bank ON moves(bank_id);
@@ -118,6 +139,8 @@ CREATE INDEX IF NOT EXISTS idx_users_bank ON users(bank_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_global ON users(login) WHERE login <> '';
 CREATE INDEX IF NOT EXISTS idx_logs_bank ON logs(bank_id);
 CREATE INDEX IF NOT EXISTS idx_security_logs_bank ON security_logs(bank_id);
+CREATE INDEX IF NOT EXISTS idx_operation_requests_bank ON operation_requests(bank_id,created_at);
+CREATE INDEX IF NOT EXISTS idx_operation_requests_user ON operation_requests(bank_id,requested_by,created_at);
 
 
 CREATE TABLE IF NOT EXISTS support_messages (

@@ -17,4 +17,16 @@ const html = await readFile('public/index.html', 'utf8');
 if (/sessionStorage\.setItem\(['"]bmp_token/i.test(html)) throw new Error('Le jeton de session ne doit pas être stocké dans le navigateur.');
 if (/localStorage\.setItem\(['"]bmp_management_settings/i.test(html)) throw new Error('Les données de gestion ne doivent pas être stockées dans localStorage.');
 
+const requiredClientUi = [
+  'Liste des clients', '+ Nouveau client', 'Personne physique', 'Personne morale',
+  'Informations de l’entreprise', 'Représentant légal de l’entreprise',
+  'Informations du client personnel', 'clientOptimizeImage'
+];
+for (const marker of requiredClientUi) {
+  if (!html.includes(marker)) throw new Error(`Formulaire client incomplet : ${marker}`);
+}
+if (!worker.includes('normalizeClientPayload') || !worker.includes('CLIENT_IMAGE_MAX_DATAURL_CHARS')) {
+  throw new Error('Validation serveur du formulaire client absente.');
+}
+
 console.log('Validation réussie : fichiers présents, secrets absents et stockage navigateur sécurisé.');

@@ -127,3 +127,12 @@ pbkdf2_sha256$100000$SEL_ALEATOIRE$EMPREINTE
 L’identifiant et le mot de passe Super Admin restent des secrets Cloudflare et ne sont jamais enregistrés dans le dépôt.
 
 Si une tentative précédente avec une valeur supérieure à la limite Cloudflare itérations a échoué avant l’inscription, aucune ligne de compte n’a été créée, car le hash est calculé avant l’écriture dans D1.
+
+
+## Formulaire professionnel Nouveau client — V5
+
+La section **Clients** contient un bouton **+ Nouveau client** placé sur la même ligne que **Liste des clients**. Le popup propose les profils **Personne physique** et **Personne morale**, avec les champs détaillés correspondants.
+
+Les photos et logos sont optimisés dans le navigateur, stockés dans le binding KV existant `KV`, puis servis uniquement par la route authentifiée `GET /api/client/media`. D1 conserve les informations textuelles et une référence interne à l’image. Aucune nouvelle variable ni aucun nouveau binding Cloudflare n’est nécessaire.
+
+Les formats autorisés sont JPG, PNG et WebP. Les SVG et les fichiers trop volumineux sont refusés côté navigateur et côté Worker.

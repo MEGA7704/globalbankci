@@ -732,12 +732,17 @@ body.modal-open{overflow:hidden}.proModalBackdrop{position:fixed!important;inset
 .clientFormGrid .full{grid-column:1/-1!important}
 .clientRegistrationModal input,.clientRegistrationModal select{height:46px!important;background:#fff!important}
 .clientRegistrationModal input[type=file]{padding:10px!important;height:auto!important}
+.clientFileUpload{display:grid!important;grid-template-columns:minmax(0,1fr) 112px!important;gap:14px!important;align-items:center!important;border:1px dashed #b9ccd5!important;border-radius:16px!important;padding:12px!important;background:#fbfdff!important}
+.clientFileUpload small{display:block!important;margin-top:7px!important;color:#52656a!important;font-weight:800!important}
+.clientImagePreview{width:112px!important;height:88px!important;border-radius:14px!important;border:1px solid #dbe7ee!important;background:linear-gradient(135deg,#edf7f6,#fff8df)!important;display:grid!important;place-items:center!important;overflow:hidden!important;color:#6b7b8f!important;font-size:12px!important;font-weight:900!important;text-align:center!important;padding:6px!important}
+.clientImagePreview img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:10px!important;background:#fff!important}
+.clientUploadNote{display:block!important;margin-top:6px!important;color:#6b7b8f!important;font-size:11.5px!important;font-weight:750!important}
 .clientFormError{display:none;margin:12px 0 0!important;border-radius:14px!important;border:1px solid #fecaca!important;background:#fff1f2!important;color:#991b1b!important;padding:11px 13px!important;font-weight:900!important}
 .clientFormError.show{display:block!important}
 .clientHidden{display:none!important}
 .clientListPanel.fullWidth{width:100%!important}
 @media(max-width:980px){.clientFormGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.clientRegistrationModal{width:97vw!important}}
-@media(max-width:640px){.clientTypeOptions,.clientFormGrid,.clientFormGrid.twoCols{grid-template-columns:1fr!important}.clientPageHeader{align-items:stretch!important}.clientNewBtn{width:100%!important}.clientRegistrationIntro{grid-template-columns:1fr!important;text-align:center!important}.clientRegistrationIcon{margin:auto!important}.clientRegistrationModal .proModalFoot{flex-direction:column-reverse!important}.clientRegistrationModal .proModalFoot button{width:100%!important}}
+@media(max-width:640px){.clientTypeOptions,.clientFormGrid,.clientFormGrid.twoCols{grid-template-columns:1fr!important}.clientFileUpload{grid-template-columns:1fr!important}.clientImagePreview{width:100%!important;height:120px!important}.clientPageHeader{align-items:stretch!important}.clientNewBtn{width:100%!important}.clientRegistrationIntro{grid-template-columns:1fr!important;text-align:center!important}.clientRegistrationIcon{margin:auto!important}.clientRegistrationModal .proModalFoot{flex-direction:column-reverse!important}.clientRegistrationModal .proModalFoot button{width:100%!important}}
 /* === FIN FORMULAIRE CLIENT POPUP === */
 
 
@@ -2380,19 +2385,44 @@ function clientPieceDisplay(c){const d=clientDetails(c);return d.numeroPiece||d.
 function clientFormValue(id){const el=$(id);return el?String(el.value||'').trim():'';}
 function clientFormFileValue(id){const el=$(id);return el&&el.dataset&&el.dataset.dataurl?el.dataset.dataurl:'';}
 function clientEscapeValue(v){return escapeHtml(v||'')}
-function clientFileReaderBind(inputId){
- const input=$(inputId); if(!input)return;
- input.addEventListener('change',()=>{
-  const file=input.files&&input.files[0];
-  input.dataset.dataurl='';
-  const label=document.querySelector(`[data-file-label="${inputId}"]`);
-  if(!file){if(label)label.textContent='Aucun fichier sélectionné';return;}
-  if(label)label.textContent=file.name;
-  const reader=new FileReader();
-  reader.onload=()=>{input.dataset.dataurl=String(reader.result||'');};
-  reader.readAsDataURL(file);
+const CLIENT_IMAGE_ALLOWED_TYPES=new Set(['image/jpeg','image/png','image/webp']);
+const CLIENT_IMAGE_MAX_SOURCE_BYTES=5*1024*1024;
+const CLIENT_IMAGE_MAX_DATAURL_CHARS=850000;
+function clientReadFileDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(new Error('Lecture du fichier impossible.'));r.readAsDataURL(file);});}
+function clientLoadImage(dataUrl){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Image invalide ou illisible.'));img.src=dataUrl;});}
+async function clientOptimizeImage(file){
+ if(!file)return '';
+ if(!CLIENT_IMAGE_ALLOWED_TYPES.has(String(file.type||'').toLowerCase()))throw new Error('Formats autorisés : JPG, PNG ou WebP.');
+ if(Number(file.size||0)>CLIENT_IMAGE_MAX_SOURCE_BYTES)throw new Error('L’image ne doit pas dépasser 5 Mo.');
+ const raw=await clientReadFileDataUrl(file),img=await clientLoadImage(raw);
+ const maxSide=720,ratio=Math.min(1,maxSide/Math.max(img.naturalWidth||1,img.naturalHeight||1));
+ const width=Math.max(1,Math.round((img.naturalWidth||1)*ratio)),height=Math.max(1,Math.round((img.naturalHeight||1)*ratio));
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d',{alpha:true});if(!ctx)throw new Error('Traitement de l’image indisponible.');
+ ctx.drawImage(img,0,0,width,height);
+ let out=canvas.toDataURL('image/webp',.82);
+ if(out.length>CLIENT_IMAGE_MAX_DATAURL_CHARS)out=canvas.toDataURL('image/webp',.66);
+ if(out.length>CLIENT_IMAGE_MAX_DATAURL_CHARS)throw new Error('L’image reste trop volumineuse après optimisation. Choisissez une image plus légère.');
+ return out;
+}
+function clientRenderImagePreview(inputId,dataUrl){
+ const box=document.querySelector(`[data-image-preview="${inputId}"]`);if(!box)return;
+ box.innerHTML=dataUrl?`<img src="${dataUrl}" alt="Aperçu du fichier">`:'Aucun aperçu';
+}
+function clientFileReaderBind(inputId,existingData=''){
+ const input=$(inputId);if(!input)return;
+ const candidate=String(existingData||'');const safeData=(candidate.length<=CLIENT_IMAGE_MAX_DATAURL_CHARS&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(candidate))?candidate:'';const safeUrl=/^\/api\/client\/media\?id=[A-Za-z0-9_%.-]+$/.test(candidate)?candidate:'';
+ input.dataset.dataurl=safeData;input.dataset.previewurl=safeData||safeUrl;input.dataset.processing='0';clientRenderImagePreview(inputId,input.dataset.previewurl);
+ input.addEventListener('change',async()=>{
+  const file=input.files&&input.files[0],label=document.querySelector(`[data-file-label="${inputId}"]`);
+  if(!file){if(label)label.textContent=input.dataset.previewurl?'Image enregistrée':'Aucun fichier sélectionné';clientRenderImagePreview(inputId,input.dataset.previewurl);return;}
+  input.dataset.processing='1';if(label)label.textContent='Optimisation sécurisée en cours...';
+  try{const optimized=await clientOptimizeImage(file);input.dataset.dataurl=optimized;input.dataset.previewurl=optimized;if(label)label.textContent=file.name+' • image optimisée';clientRenderImagePreview(inputId,optimized);const err=$('clientFormError');if(err){err.classList.remove('show');err.textContent='';}}
+  catch(e){input.value='';if(label)label.textContent='Fichier refusé';showClientFormError((e&&e.message)||'Image invalide.');clientRenderImagePreview(inputId,input.dataset.previewurl);}
+  finally{input.dataset.processing='0';}
  });
 }
+function clientUploadProcessing(){return ['pfPhoto','pmLogo'].some(id=>{const el=$(id);return el&&el.dataset&&el.dataset.processing==='1';});}
 function setClientType(type){
  const phy=$('clientTypePhysical'), mor=$('clientTypeMoral');
  if(phy)phy.checked=type==='personne_physique';
@@ -2432,7 +2462,7 @@ function buildClientFormBody(c){
   <div class="field"><label>Personne à contacter</label><input id="pfContactNom" value="${clientEscapeValue(d.personneAContacter)}"></div>
   <div class="field"><label>Contact de la personne</label><input id="pfContactTel" value="${clientEscapeValue(d.contactPersonneAContacter)}"></div>
   <div class="field"><label>Lien avec la personne</label><input id="pfContactLien" value="${clientEscapeValue(d.lienPersonneAContacter)}"></div>
-  <div class="field full"><label>Photo du client</label><input id="pfPhoto" type="file" accept="image/*"><small data-file-label="pfPhoto">${d.photoClient||c?.photo_logo?'Image déjà enregistrée':'Aucun fichier sélectionné'}</small></div>
+  <div class="field full"><label>Photo du client</label><div class="clientFileUpload"><div><input id="pfPhoto" type="file" accept="image/jpeg,image/png,image/webp"><small data-file-label="pfPhoto">${d.photoClient||c?.photo_logo?'Image déjà enregistrée':'Aucun fichier sélectionné'}</small><span class="clientUploadNote">JPG, PNG ou WebP • 5 Mo maximum • optimisation automatique</span></div><div class="clientImagePreview" data-image-preview="pfPhoto">Aucun aperçu</div></div></div>
  </div></div>
  <div id="clientMoralFields" class="clientFormSection ${mor?'':'clientHidden'}"><h3>Informations de l’entreprise</h3><div class="clientFormGrid">
   <div class="field"><label>Dénomination sociale <span class="req">*</span></label><input id="pmDenomination" value="${clientEscapeValue(d.denomination||c?.name)}"></div>
@@ -2449,7 +2479,7 @@ function buildClientFormBody(c){
   <div class="field"><label>Contact principal <span class="req">*</span></label><input id="pmContact" value="${clientEscapeValue(d.contactPrincipal||c?.contact)}"></div>
   <div class="field"><label>Contact WhatsApp</label><input id="pmWhatsapp" value="${clientEscapeValue(d.whatsapp)}"></div>
   <div class="field"><label>Email professionnel</label><input id="pmEmail" type="email" value="${clientEscapeValue(d.emailProfessionnel)}"></div>
-  <div class="field full"><label>Logo de l’entreprise</label><input id="pmLogo" type="file" accept="image/*"><small data-file-label="pmLogo">${d.logoEntreprise||c?.photo_logo?'Logo déjà enregistré':'Aucun fichier sélectionné'}</small></div>
+  <div class="field full"><label>Logo de l’entreprise</label><div class="clientFileUpload"><div><input id="pmLogo" type="file" accept="image/jpeg,image/png,image/webp"><small data-file-label="pmLogo">${d.logoEntreprise||c?.photo_logo?'Logo déjà enregistré':'Aucun fichier sélectionné'}</small><span class="clientUploadNote">JPG, PNG ou WebP • 5 Mo maximum • optimisation automatique</span></div><div class="clientImagePreview" data-image-preview="pmLogo">Aucun aperçu</div></div></div>
  </div><h3 style="margin-top:18px!important">Représentant légal de l’entreprise</h3><div class="clientFormGrid twoCols">
   <div class="field"><label>Nom du représentant <span class="req">*</span></label><input id="pmRepNom" value="${clientEscapeValue(d.representantLegalNom)}"></div>
   <div class="field"><label>Prénoms du représentant</label><input id="pmRepPrenoms" value="${clientEscapeValue(d.representantLegalPrenoms)}"></div>
@@ -2460,18 +2490,21 @@ function buildClientFormBody(c){
  </div></div>`;
 }
 function collectClientFormPayload(id){
+ if(clientUploadProcessing()){showClientFormError('Veuillez patienter pendant l’optimisation de l’image.');return null;}
  const type=selectedClientType();
  if(!type){showClientFormError('Veuillez sélectionner le type de client.');return null;}
  if(type==='personne_physique'){
   const nom=clientFormValue('pfNom'), prenoms=clientFormValue('pfPrenoms'), tel=clientFormValue('pfTelephone'), typePiece=clientFormValue('pfTypePiece'), numeroPiece=clientFormValue('pfNumeroPiece');
   if(!nom||!prenoms||!tel||!typePiece||!numeroPiece){showClientFormError('Veuillez renseigner : Nom, Prénoms, Contact téléphone, Type de pièce et Numéro de pièce.');return null;}
-  const details={typeClient:type,nom,prenoms,dateNaissance:clientFormValue('pfDateNaissance'),lieuNaissance:clientFormValue('pfLieuNaissance'),sexe:clientFormValue('pfSexe'),profession:clientFormValue('pfProfession'),typePiece,numeroPiece,telephone:tel,whatsapp:clientFormValue('pfWhatsapp'),commune:clientFormValue('pfCommune'),villageQuartier:clientFormValue('pfVillage'),personneAContacter:clientFormValue('pfContactNom'),contactPersonneAContacter:clientFormValue('pfContactTel'),lienPersonneAContacter:clientFormValue('pfContactLien'),photoClient:clientFormFileValue('pfPhoto')};
-  return {id,typeClient:type,client_type:type,name:[nom,prenoms].filter(Boolean).join(' '),contact:tel,job:details.profession,address:[details.commune,details.villageQuartier].filter(Boolean).join(' / '),piece:numeroPiece,photo_logo:details.photoClient,client_details:JSON.stringify(details)};
+  const media=clientFormFileValue('pfPhoto');
+  const details={typeClient:type,nom,prenoms,dateNaissance:clientFormValue('pfDateNaissance'),lieuNaissance:clientFormValue('pfLieuNaissance'),sexe:clientFormValue('pfSexe'),profession:clientFormValue('pfProfession'),typePiece,numeroPiece,telephone:tel,whatsapp:clientFormValue('pfWhatsapp'),commune:clientFormValue('pfCommune'),villageQuartier:clientFormValue('pfVillage'),personneAContacter:clientFormValue('pfContactNom'),contactPersonneAContacter:clientFormValue('pfContactTel'),lienPersonneAContacter:clientFormValue('pfContactLien'),photoClient:!!media};
+  return {id,typeClient:type,client_type:type,name:[nom,prenoms].filter(Boolean).join(' '),contact:tel,job:details.profession,address:[details.commune,details.villageQuartier].filter(Boolean).join(' / '),piece:numeroPiece,photo_logo:media,client_details:JSON.stringify(details)};
  }
  const denomination=clientFormValue('pmDenomination'), forme=clientFormValue('pmForme'), contact=clientFormValue('pmContact'), repNom=clientFormValue('pmRepNom'), repContact=clientFormValue('pmRepContact'), repTypePiece=clientFormValue('pmRepTypePiece'), repNumeroPiece=clientFormValue('pmRepNumeroPiece');
  if(!denomination||!forme||!contact||!repNom||!repContact||!repTypePiece||!repNumeroPiece){showClientFormError('Veuillez renseigner : Dénomination sociale, Forme juridique, Contact principal, Nom et contact du représentant, Type et Numéro de pièce du représentant.');return null;}
- const details={typeClient:type,denomination,sigle:clientFormValue('pmSigle'),formeJuridique:forme,domaineActivite:clientFormValue('pmDomaine'),numeroRccmRecepisseAgrement:clientFormValue('pmRccm'),numeroContribuable:clientFormValue('pmContribuable'),dateCreationEntreprise:clientFormValue('pmDateCreation'),ville:clientFormValue('pmVille'),commune:clientFormValue('pmCommune'),villageQuartier:clientFormValue('pmVillage'),siegeSocial:clientFormValue('pmSiege'),contactPrincipal:contact,whatsapp:clientFormValue('pmWhatsapp'),emailProfessionnel:clientFormValue('pmEmail'),logoEntreprise:clientFormFileValue('pmLogo'),representantLegalNom:repNom,representantLegalPrenoms:clientFormValue('pmRepPrenoms'),representantLegalFonction:clientFormValue('pmRepFonction'),representantLegalContact:repContact,representantLegalTypePiece:repTypePiece,representantLegalNumeroPiece:repNumeroPiece};
- return {id,typeClient:type,client_type:type,name:denomination,contact,job:[forme,details.domaineActivite].filter(Boolean).join(' - '),address:[details.commune,details.villageQuartier,details.ville].filter(Boolean).join(' / '),piece:repNumeroPiece,photo_logo:details.logoEntreprise,client_details:JSON.stringify(details)};
+ const media=clientFormFileValue('pmLogo');
+ const details={typeClient:type,denomination,sigle:clientFormValue('pmSigle'),formeJuridique:forme,domaineActivite:clientFormValue('pmDomaine'),numeroRccmRecepisseAgrement:clientFormValue('pmRccm'),numeroContribuable:clientFormValue('pmContribuable'),dateCreationEntreprise:clientFormValue('pmDateCreation'),ville:clientFormValue('pmVille'),commune:clientFormValue('pmCommune'),villageQuartier:clientFormValue('pmVillage'),siegeSocial:clientFormValue('pmSiege'),contactPrincipal:contact,whatsapp:clientFormValue('pmWhatsapp'),emailProfessionnel:clientFormValue('pmEmail'),logoEntreprise:!!media,representantLegalNom:repNom,representantLegalPrenoms:clientFormValue('pmRepPrenoms'),representantLegalFonction:clientFormValue('pmRepFonction'),representantLegalContact:repContact,representantLegalTypePiece:repTypePiece,representantLegalNumeroPiece:repNumeroPiece};
+ return {id,typeClient:type,client_type:type,name:denomination,contact,job:[forme,details.domaineActivite].filter(Boolean).join(' - '),address:[details.commune,details.villageQuartier,details.ville].filter(Boolean).join(' / '),piece:repNumeroPiece,photo_logo:media,client_details:JSON.stringify(details)};
 }
 function openClientFormPopup(id){
  if(!id&&!canCreateClient())return toast('Accès refusé : votre compte ne permet pas d’enregistrer un client.');
@@ -2488,7 +2521,7 @@ function openClientFormPopup(id){
   await refresh();
   render();
  });
- setTimeout(()=>{const modal=document.querySelector('#proModalBackdrop .proModal');if(modal)modal.classList.add('clientRegistrationModal');clientFileReaderBind('pfPhoto');clientFileReaderBind('pmLogo');if(!isEdit)setClientType('');const first=document.querySelector('#proModalBackdrop input[name="clientTypeChoice"]');if(first)first.focus();},50);
+ setTimeout(()=>{const modal=document.querySelector('#proModalBackdrop .proModal');if(modal)modal.classList.add('clientRegistrationModal');const existingMedia=String(c&&c.photo_logo||'');clientFileReaderBind('pfPhoto',existingMedia);clientFileReaderBind('pmLogo',existingMedia);if(!isEdit)setClientType('');const first=document.querySelector('#proModalBackdrop input[name="clientTypeChoice"]');if(first)first.focus();},50);
  return false;
 }
 

@@ -9,6 +9,9 @@ const LOGIN_IP_LIMIT = 20;
 const SESSION_COOKIE = 'gb_session';
 const FREE_SUBSCRIPTION_DAYS = 20;
 const BUSINESS_SUBSCRIPTION_DAYS = 365;
+const CLIENT_REQUEST_MAX_BYTES = 1200000;
+const CLIENT_IMAGE_MAX_DATAURL_CHARS = 850000;
+const CLIENT_DETAILS_MAX_CHARS = 16000;
 
 const DEFAULT_CHARGE_BASES_BANK_MANAGER = [
  ['Frais Compte courant','Frais',0],['Frais Compte épargne','Frais',0],['Frais Compte entreprise','Frais',0],['Frais Compte association','Frais',0],['Frais Dépôt à terme','Frais',0],['Frais Compte crédit','Frais',0],['Frais Dépôt espèces','Frais',0],['Frais Retrait espèces','Frais',0],['Frais de recouvrement','Frais',0],['Frais de relevé bancaire','Frais',0],['Frais de clôture','Frais',0],['Frais de gestion mensuelle','Frais',0],['Frais Carnet','Frais',0]
@@ -244,6 +247,98 @@ function json(data,status=200,extraHeaders={}){
  return new Response(JSON.stringify(data),{status,headers});
 }
 async function body(req){try{return await req.json()}catch{return {}}}
+function cleanClientText(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);}
+function cleanClientDate(value){const v=cleanClientText(value,10);return /^\d{4}-\d{2}-\d{2}$/.test(v)?v:'';}
+function cleanClientType(value){const v=String(value||'').trim().toLowerCase();return v==='personne_morale'?'personne_morale':'personne_physique';}
+function parseClientDetails(value){
+ if(value&&typeof value==='object'&&!Array.isArray(value))return value;
+ try{const parsed=JSON.parse(String(value||'{}'));return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{};}catch{return {};}
+}
+function cleanClientImage(value){
+ const raw=String(value||'').trim();if(!raw)return '';
+ if(raw.length>CLIENT_IMAGE_MAX_DATAURL_CHARS)throw json({error:'La photo ou le logo est trop volumineux.'},413);
+ if(!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(raw))throw json({error:'Format image refusé. Utilisez JPG, PNG ou WebP.'},400);
+ return raw;
+}
+function normalizeClientPayload(input,existingImage=''){
+ const c=input&&typeof input==='object'?input:{};
+ const type=cleanClientType(c.client_type||c.typeClient);
+ const raw=parseClientDetails(c.client_details);
+ const structured=Object.keys(raw).length>0;
+ const media=cleanClientImage(c.photo_logo);
+ let details,name,contact,job,address,piece;
+ if(type==='personne_morale'&&structured){
+  details={
+   typeClient:type,
+   denomination:cleanClientText(raw.denomination||raw.denominationSociale,180),
+   sigle:cleanClientText(raw.sigle,60),
+   formeJuridique:cleanClientText(raw.formeJuridique,80),
+   domaineActivite:cleanClientText(raw.domaineActivite,160),
+   numeroRccmRecepisseAgrement:cleanClientText(raw.numeroRccmRecepisseAgrement,120),
+   numeroContribuable:cleanClientText(raw.numeroContribuable,100),
+   dateCreationEntreprise:cleanClientDate(raw.dateCreationEntreprise),
+   ville:cleanClientText(raw.ville,100),
+   commune:cleanClientText(raw.commune,120),
+   villageQuartier:cleanClientText(raw.villageQuartier,140),
+   siegeSocial:cleanClientText(raw.siegeSocial,180),
+   contactPrincipal:cleanClientText(raw.contactPrincipal,50),
+   whatsapp:cleanClientText(raw.whatsapp,50),
+   emailProfessionnel:cleanClientText(raw.emailProfessionnel,160),
+   logoEntreprise:!!media,
+   representantLegalNom:cleanClientText(raw.representantLegalNom,100),
+   representantLegalPrenoms:cleanClientText(raw.representantLegalPrenoms,160),
+   representantLegalFonction:cleanClientText(raw.representantLegalFonction,100),
+   representantLegalContact:cleanClientText(raw.representantLegalContact,50),
+   representantLegalTypePiece:cleanClientText(raw.representantLegalTypePiece,80),
+   representantLegalNumeroPiece:cleanClientText(raw.representantLegalNumeroPiece,100)
+  };
+  if(!details.denomination||!details.formeJuridique||!details.contactPrincipal||!details.representantLegalNom||!details.representantLegalContact||!details.representantLegalTypePiece||!details.representantLegalNumeroPiece)throw json({error:'Informations obligatoires de la personne morale incomplètes.'},400);
+  if(details.emailProfessionnel&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.emailProfessionnel))throw json({error:'Adresse e-mail professionnelle invalide.'},400);
+  name=details.denomination;contact=details.contactPrincipal;job=[details.formeJuridique,details.domaineActivite].filter(Boolean).join(' - ');address=[details.commune,details.villageQuartier,details.ville].filter(Boolean).join(' / ');piece=details.representantLegalNumeroPiece;
+ }else if(type==='personne_physique'&&structured){
+  details={
+   typeClient:type,
+   nom:cleanClientText(raw.nom,100),
+   prenoms:cleanClientText(raw.prenoms,160),
+   dateNaissance:cleanClientDate(raw.dateNaissance),
+   lieuNaissance:cleanClientText(raw.lieuNaissance,140),
+   sexe:['Masculin','Féminin'].includes(String(raw.sexe||''))?String(raw.sexe):'',
+   profession:cleanClientText(raw.profession,140),
+   typePiece:cleanClientText(raw.typePiece,80),
+   numeroPiece:cleanClientText(raw.numeroPiece,100),
+   telephone:cleanClientText(raw.telephone,50),
+   whatsapp:cleanClientText(raw.whatsapp,50),
+   commune:cleanClientText(raw.commune,120),
+   villageQuartier:cleanClientText(raw.villageQuartier,140),
+   personneAContacter:cleanClientText(raw.personneAContacter,160),
+   contactPersonneAContacter:cleanClientText(raw.contactPersonneAContacter,50),
+   lienPersonneAContacter:cleanClientText(raw.lienPersonneAContacter,100),
+   photoClient:!!media
+  };
+  if(!details.nom||!details.prenoms||!details.telephone||!details.typePiece||!details.numeroPiece)throw json({error:'Informations obligatoires de la personne physique incomplètes.'},400);
+  name=[details.nom,details.prenoms].filter(Boolean).join(' ');contact=details.telephone;job=details.profession;address=[details.commune,details.villageQuartier].filter(Boolean).join(' / ');piece=details.numeroPiece;
+ }else{
+  name=cleanClientText(c.name||c.nomAffiche,220);if(!name)throw json({error:'Nom obligatoire.'},400);
+  contact=cleanClientText(c.contact,50);job=cleanClientText(c.job,160);address=cleanClientText(c.address,220);piece=cleanClientText(c.piece,100);
+  details={typeClient:type,legacy:true,nom:type==='personne_physique'?name:'',prenoms:'',telephone:contact,numeroPiece:piece,denomination:type==='personne_morale'?name:'',contactPrincipal:contact,photoClient:type==='personne_physique'&&!!media,logoEntreprise:type==='personne_morale'&&!!media};
+ }
+ const detailsJson=JSON.stringify(details);if(detailsJson.length>CLIENT_DETAILS_MAX_CHARS)throw json({error:'Les informations du client sont trop volumineuses.'},413);
+ return {type,name,contact,job,address,piece,details:detailsJson,media};
+}
+function clientMediaKey(bankId,clientId){return `client-media:${String(bankId)}:${String(clientId)}`;}
+function clientMediaRef(key){return 'kv:'+String(key||'');}
+function isClientMediaRef(value){return String(value||'').startsWith('kv:client-media:');}
+function clientMediaPublicUrl(clientId){return '/api/client/media?id='+encodeURIComponent(String(clientId||''));}
+async function storeClientMedia(env,bankId,clientId,dataUrl){
+ const clean=cleanClientImage(dataUrl);if(!clean)return '';
+ const key=clientMediaKey(bankId,clientId);await env.KV.put(key,clean);return clientMediaRef(key);
+}
+async function deleteClientMedia(env,stored){if(isClientMediaRef(stored)){try{await env.KV.delete(String(stored).slice(3));}catch(e){}}}
+function clientImageResponse(dataUrl){
+ const match=/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/i.exec(String(dataUrl||''));
+ if(!match)return new Response('Image introuvable.',{status:404,headers:{'cache-control':'no-store','x-content-type-options':'nosniff'}});
+ try{const binary=atob(match[2]);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return new Response(bytes,{status:200,headers:{'content-type':'image/'+match[1].toLowerCase(),'cache-control':'private, max-age=300','x-content-type-options':'nosniff','cross-origin-resource-policy':'same-origin'}});}catch{return new Response('Image invalide.',{status:404,headers:{'cache-control':'no-store','x-content-type-options':'nosniff'}});}
+}
 function hasBindings(env){return !!(env && env.DB && env.KV)}
 function assertSameOrigin(request){
  if(!['POST','PUT','PATCH','DELETE'].includes(request.method))return;
@@ -438,6 +533,7 @@ async function bankPayload(env,bankId,session={}){
  await seedDefaultCharges(env,bankId);
  await ensureCompanyAccount(env,bankId);
 const clients=await env.DB.prepare("SELECT id,bank_id,name,contact,job,address,piece,client_type,client_details,photo_logo,is_blocked,is_deleted,created_at FROM clients WHERE bank_id=? AND COALESCE(is_deleted,0)=0 ORDER BY created_at DESC").bind(bankId).all();
+ const clientRows=(clients.results||[]).map(c=>({...c,photo_logo:isClientMediaRef(c.photo_logo)?clientMediaPublicUrl(c.id):String(c.photo_logo||'')}));
  const accounts=await env.DB.prepare("SELECT * FROM accounts WHERE bank_id=? AND COALESCE(is_deleted,0)=0 AND lower(COALESCE(status,'actif')) NOT LIKE '%supprim%' AND lower(COALESCE(status,'actif')) NOT LIKE '%delete%' AND lower(COALESCE(status,'actif')) NOT LIKE '%desactiv%' AND lower(COALESCE(status,'actif')) NOT LIKE '%archive%' AND lower(COALESCE(status,'actif')) NOT LIKE '%ferme%' AND lower(COALESCE(status,'actif')) NOT LIKE '%clotur%' AND lower(COALESCE(status,'actif')) NOT LIKE '%inactif%' ORDER BY created_at DESC").bind(bankId).all();
  const moves=await env.DB.prepare("SELECT m.* FROM moves m JOIN accounts a ON a.id=m.account_id AND a.bank_id=m.bank_id WHERE m.bank_id=? AND COALESCE(a.is_deleted,0)=0 AND lower(COALESCE(a.status,'actif')) NOT LIKE '%supprim%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%delete%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%desactiv%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%archive%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%ferme%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%clotur%' AND lower(COALESCE(a.status,'actif')) NOT LIKE '%inactif%' ORDER BY m.created_at DESC LIMIT 1000").bind(bankId).all();
  const users=await env.DB.prepare('SELECT id,bank_id,name,login,role,status,permissions,last_login,created_at FROM users WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
@@ -451,7 +547,7 @@ const clients=await env.DB.prepare("SELECT id,bank_id,name,contact,job,address,p
  const ignored_revenues=await env.DB.prepare('SELECT * FROM ignored_revenues WHERE bank_id=? ORDER BY created_at DESC').bind(bankId).all();
  const management_settings=await managementSettings(env,bankId);
  const security_logs=await env.DB.prepare('SELECT * FROM security_logs WHERE bank_id=? ORDER BY created_at DESC LIMIT 200').bind(bankId).all();
- let payload={bank,user:{id:session.userId||'',name:session.userName||bank.manager||'Administrateur banque',login:session.userLogin||bank.login||'',role:roleLabel(session.userRole||'Administrateur banque'),role_key:sessionRoleKey(session),permissions:sessionPermissions(session),status:'Actif',last_login:session.lastLogin||''},clients:clients.results||[],accounts:accounts.results||[],moves:moves.results||[],users:users.results||[],logs:logs.results||[],charge_bases:charge_bases.results||[],obligations:obligations.results||[],reset_requests:reset_requests.results||[],account_types:account_types.results||[],movement_types:movement_types.results||[],manual_revenues:manual_revenues.results||[],ignored_revenues:ignored_revenues.results||[],security_logs:security_logs.results||[],management_settings};
+ let payload={bank,user:{id:session.userId||'',name:session.userName||bank.manager||'Administrateur banque',login:session.userLogin||bank.login||'',role:roleLabel(session.userRole||'Administrateur banque'),role_key:sessionRoleKey(session),permissions:sessionPermissions(session),status:'Actif',last_login:session.lastLogin||''},clients:clientRows,accounts:accounts.results||[],moves:moves.results||[],users:users.results||[],logs:logs.results||[],charge_bases:charge_bases.results||[],obligations:obligations.results||[],reset_requests:reset_requests.results||[],account_types:account_types.results||[],movement_types:movement_types.results||[],manual_revenues:manual_revenues.results||[],ignored_revenues:ignored_revenues.results||[],security_logs:security_logs.results||[],management_settings};
  const rk=sessionRoleKey(session);
  if(!['super_admin','admin_bank'].includes(rk)){
   const perms=sessionPermissions(session);
@@ -581,6 +677,14 @@ async function handleApi(request,env,path){
   if(s.role!=='bank')return json({error:'Action réservée à une banque.'},403); const bankId=s.bankId; await requireActiveBankSubscription(env,bankId);
   const roleDenied=await enforceRoleApiAccess(env,bankId,s,path,request); if(roleDenied)return roleDenied;
 
+  if(path==='/api/client/media'&&request.method==='GET'){
+   const clientId=String(new URL(request.url).searchParams.get('id')||'').trim();if(!clientId)return new Response('Image introuvable.',{status:404});
+   const row=await env.DB.prepare('SELECT id,photo_logo FROM clients WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=0').bind(clientId,bankId).first();
+   if(!row)return new Response('Image introuvable.',{status:404,headers:{'cache-control':'no-store'}});
+   let stored=String(row.photo_logo||'');if(isClientMediaRef(stored))stored=String(await env.KV.get(stored.slice(3))||'');
+   return clientImageResponse(stored);
+  }
+
   if(path==='/api/admin/verify-password'&&request.method==='POST'){
    if(sessionRoleKey(s)!=='admin_bank')return json({error:'Action réservée à l’Administrateur banque.'},403);
    const p=await body(request);const password=String(p.password||'');const row=await env.DB.prepare('SELECT pass FROM banks WHERE id=?').bind(bankId).first();const verified=row?await verifyPassword(password,row.pass):{ok:false};
@@ -636,19 +740,27 @@ async function handleApi(request,env,path){
   }
 
   if(path==='/api/client'&&request.method==='POST'){
-   const c=await body(request); const name=String(c.name||c.nomAffiche||'').trim();
-   if(!name)return json({error:'Nom obligatoire.'},400);
-   const clientType=String(c.client_type||c.typeClient||'personne_physique');
-   const details=typeof c.client_details==='string'?c.client_details:JSON.stringify(c.client_details||{});
-   await env.DB.prepare('INSERT INTO clients(id,bank_id,name,contact,job,address,piece,pass,client_type,client_details,photo_logo,is_blocked,is_deleted) VALUES(?,?,?,?,?,?,?,?,?,?,?,0,0)').bind(uid('CL'),bankId,name,c.contact||'',c.job||'',c.address||'',c.piece||'',c.pass||'',clientType,details,c.photo_logo||'').run();
-   await addLog(env,bankId,'Nouveau client ajouté : '+name); return json({ok:true});
+   if(Number(request.headers.get('content-length')||0)>CLIENT_REQUEST_MAX_BYTES)return json({error:'Le formulaire client est trop volumineux.'},413);
+   const c=await body(request),clean=normalizeClientPayload(c,'');
+   const clientId=uid('CL'),mediaRef=clean.media?await storeClientMedia(env,bankId,clientId,clean.media):'';
+   await env.DB.prepare('INSERT INTO clients(id,bank_id,name,contact,job,address,piece,pass,client_type,client_details,photo_logo,is_blocked,is_deleted) VALUES(?,?,?,?,?,?,?,?,?,?,?,0,0)').bind(clientId,bankId,clean.name,clean.contact,clean.job,clean.address,clean.piece,'',clean.type,clean.details,mediaRef).run();
+   await addLog(env,bankId,'Nouveau client ajouté : '+clean.name+' ('+(clean.type==='personne_morale'?'Personne morale':'Personne physique')+')');
+   await addSecurityLog(env,bankId,s,'Création client','Clients','autorisé',clean.type);
+   return json({ok:true});
   }
   if(path==='/api/client/update'&&request.method==='POST'){
-   const c=await body(request); if(!c.id)return json({error:'Client obligatoire.'},400); const name=String(c.name||c.nomAffiche||'').trim(); if(!name)return json({error:'Nom obligatoire.'},400);
-   const clientType=String(c.client_type||c.typeClient||'personne_physique');
-   const details=typeof c.client_details==='string'?c.client_details:JSON.stringify(c.client_details||{});
-   await env.DB.prepare('UPDATE clients SET name=?,contact=?,job=?,address=?,piece=?,client_type=?,client_details=?,photo_logo=? WHERE id=? AND bank_id=?').bind(name,c.contact||'',c.job||'',c.address||'',c.piece||'',clientType,details,c.photo_logo||'',c.id,bankId).run();
-   await addLog(env,bankId,'Client modifié : '+name); return json({ok:true});
+   if(Number(request.headers.get('content-length')||0)>CLIENT_REQUEST_MAX_BYTES)return json({error:'Le formulaire client est trop volumineux.'},413);
+   const c=await body(request);if(!c.id)return json({error:'Client obligatoire.'},400);
+   const existing=await env.DB.prepare('SELECT id,photo_logo FROM clients WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=0').bind(c.id,bankId).first();
+   if(!existing)return json({error:'Client introuvable.'},404);
+   const clean=normalizeClientPayload(c,'');
+   let mediaRef=String(existing.photo_logo||'');
+   if(clean.media){mediaRef=await storeClientMedia(env,bankId,c.id,clean.media);}
+   else if(mediaRef&&/^data:image\/(?:jpeg|png|webp);base64,/i.test(mediaRef)){mediaRef=await storeClientMedia(env,bankId,c.id,mediaRef);}
+   await env.DB.prepare('UPDATE clients SET name=?,contact=?,job=?,address=?,piece=?,client_type=?,client_details=?,photo_logo=? WHERE id=? AND bank_id=?').bind(clean.name,clean.contact,clean.job,clean.address,clean.piece,clean.type,clean.details,mediaRef,c.id,bankId).run();
+   await addLog(env,bankId,'Client modifié : '+clean.name);
+   await addSecurityLog(env,bankId,s,'Modification client','Clients','autorisé',clean.type);
+   return json({ok:true});
   }
   if(path==='/api/client/block'&&request.method==='POST'){const c=await body(request); if(!c.id)return json({error:'Client obligatoire.'},400); const b=Number(c.is_blocked||0)?1:0; await env.DB.prepare('UPDATE clients SET is_blocked=? WHERE id=? AND bank_id=?').bind(b,c.id,bankId).run(); await addLog(env,bankId,b?'Client bloqué':'Client débloqué'); return json({ok:true});}
   if(path==='/api/client/delete'&&request.method==='POST'){
@@ -660,6 +772,7 @@ async function handleApi(request,env,path){
    const countMov=await env.DB.prepare('SELECT COUNT(*) AS n FROM moves WHERE bank_id=? AND account_id IN (SELECT id FROM accounts WHERE client_id=? AND bank_id=?)').bind(bankId,c.id,bankId).first();
    await env.DB.prepare('DELETE FROM moves WHERE bank_id=? AND account_id IN (SELECT id FROM accounts WHERE client_id=? AND bank_id=?)').bind(bankId,c.id,bankId).run();
    await env.DB.prepare('DELETE FROM accounts WHERE client_id=? AND bank_id=?').bind(c.id,bankId).run();
+   await deleteClientMedia(env,row.photo_logo||'');
    await env.DB.prepare('DELETE FROM clients WHERE id=? AND bank_id=?').bind(c.id,bankId).run();
    await addLog(env,bankId,'Client supprimé définitivement avec '+Number((countAcc&&countAcc.n)||0)+' compte(s) et '+Number((countMov&&countMov.n)||0)+' mouvement(s) liés');
    return json({ok:true,deleted_client:true,deleted_accounts:Number((countAcc&&countAcc.n)||0),deleted_moves:Number((countMov&&countMov.n)||0)});

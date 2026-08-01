@@ -1,0 +1,12 @@
+name = "global-bank"
+pages_build_output_dir = "public"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bankdb"
+database_id = "692edd7a-98d5-484a-aa75-5a86a9107c16"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "f02b47264a8c411aa61052c45a3bb72a"

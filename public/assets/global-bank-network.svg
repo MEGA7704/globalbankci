@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Réseau mondial futuriste et skyline dorée">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#005b4f"/><stop offset=".48" stop-color="#003d36"/><stop offset="1" stop-color="#052f3a"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#a87a27"/><stop offset=".5" stop-color="#e0c278"/><stop offset="1" stop-color="#b58931"/></linearGradient>
+  <radialGradient id="halo"><stop stop-color="#e0c278" stop-opacity=".26"/><stop offset="1" stop-color="#e0c278" stop-opacity="0"/></radialGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#e0c278" stroke-opacity=".055" stroke-width="1"/></pattern>
+</defs>
+<rect width="1200" height="900" fill="url(#bg)"/><rect width="1200" height="900" fill="url(#grid)"/>
+<ellipse cx="590" cy="535" rx="480" ry="260" fill="url(#halo)" opacity=".42"/>
+<g fill="none" stroke="#e0c278" stroke-opacity=".18" stroke-width="2">
+ <path d="M142 368c76-69 156-101 237-97 65 3 104 39 167 38 76-2 128-59 214-50 100 11 163 89 276 70"/>
+ <path d="M126 447c107-48 184-38 258-8 91 37 143 26 224-13 117-56 197-23 334 42"/>
+ <ellipse cx="585" cy="390" rx="415" ry="205"/><ellipse cx="585" cy="390" rx="280" ry="205"/><path d="M170 390h830M585 185v410"/>
+</g>
+<g fill="#d9bf75" fill-opacity=".13">
+ <path d="M275 343l46-43 69 5 34 38-26 31-58 4-24 36-50-18-30-38z"/>
+ <path d="M434 349l58-42 68 6 29 40-20 57-48 24-30-41-50-9z"/>
+ <path d="M625 314l62-40 91 12 56 50-23 33-65 1-30 36-75-16-35-41z"/>
+ <path d="M766 425l49-19 55 20 32 56-37 54-66-7-28-48z"/>
+</g>
+<g stroke="url(#gold)" stroke-width="2.2" fill="none" filter="url(#glow)" opacity=".72">
+ <path d="M303 346Q495 165 704 324"/><path d="M420 360Q626 218 824 448"/><path d="M530 430Q690 298 888 499"/><path d="M330 405Q525 510 744 360"/>
+</g>
+<g fill="#e0c278" filter="url(#glow)"><circle cx="303" cy="346" r="5"/><circle cx="420" cy="360" r="4"/><circle cx="530" cy="430" r="5"/><circle cx="704" cy="324" r="5"/><circle cx="744" cy="360" r="4"/><circle cx="824" cy="448" r="5"/><circle cx="888" cy="499" r="4"/></g>
+<g fill="url(#gold)" opacity=".42">
+ <path d="M0 760h70v-92h32v92h48V626h42v134h28V708h54v52h31V596h42v164h44V678h35v82h31V638h51v122h43V703h49v57h40V588h58v172h30V660h47v100h38V615h64v145h38V690h43v70h77v140H0z"/>
+</g>
+<path d="M0 758h1200" stroke="#e0c278" stroke-opacity=".35"/>
+</svg>

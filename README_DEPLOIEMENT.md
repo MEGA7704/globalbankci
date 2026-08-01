@@ -162,3 +162,12 @@ Aucune nouvelle variable ou liaison Cloudflare n’est nécessaire.
 - La vérification côté interface s’appuie sur la session sécurisée chargée par `/api/me`; aucun jeton n’est stocké ou exposé dans le navigateur.
 - Le texte informatif relatif au stockage D1 a été retiré des fenêtres **Contacter le support** et **Envoyer aux entreprises**.
 
+
+## Ajustements de connexion et pages internes — V8
+
+- La grande carte centrale de connexion est réduite de 20 % sur ordinateur : largeur maximale de 1 380 px à 1 104 px et hauteur minimale de 790 px à 632 px.
+- Le panneau gauche consacré à l’identité de GLOBAL BANK occupe 40 % de la carte.
+- Le panneau droit consacré au formulaire de connexion occupe 60 % de la carte.
+- Les espacements, icônes, titres et cartes d’information ont été ajustés pour conserver un rendu équilibré.
+- La bannière horizontale « Bienvenue, … / rôle / date et heure » a été supprimée de toutes les pages internes.
+- Aucun nouveau binding, secret ou changement D1 n’est requis.

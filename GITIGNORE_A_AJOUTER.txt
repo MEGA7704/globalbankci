@@ -1,0 +1,17 @@
+IMPORTANT
+
+Le fichier .gitignore est inclus dans le ZIP. Si l'interface de téléversement
+GitHub ne l'ajoute pas, créez manuellement un fichier nommé exactement
+.gitignore à la racine du dépôt et copiez-y les lignes suivantes :
+
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+*.log
+*.zip
+*.sha256
+.DS_Store

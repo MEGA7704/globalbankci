@@ -17,9 +17,16 @@ Le fichier `wrangler.toml` est la source de vérité du projet :
 - `env.DB` est relié à la base D1 `bankdb` ;
 - `env.KV` est relié au namespace KV indiqué dans la configuration ;
 - `env.SUPER_ADMIN_SESSION_VERSION` reçoit automatiquement la valeur texte `1` ;
-- `SUPER_ADMIN_LOGIN` et `SUPER_ADMIN_PASSWORD` sont déclarés comme secrets obligatoires, sans aucune valeur dans le projet.
+- `SUPER_ADMIN_LOGIN` et `SUPER_ADMIN_PASSWORD` sont lus uniquement comme secrets chiffrés Cloudflare via `env`, sans aucune valeur dans le projet.
 
 Le navigateur ne reçoit jamais les secrets, le hash ou le sel. Le mot de passe Super Admin est comparé uniquement dans `public/_worker.js`.
+
+
+## Correction Cloudflare Pages V3
+
+La section `[secrets]` a été retirée de `wrangler.toml` pour rester compatible avec le lecteur de configuration utilisé par les déploiements Git Cloudflare Pages. Les valeurs sensibles restent exclusivement dans **Cloudflare → Variables et secrets**.
+
+Le script de build ne s'arrête plus lorsque `.gitignore` est absent après un téléversement manuel sur GitHub. Il refuse toutefois toujours tout vrai fichier `.env` ou `.dev.vars`, afin de maintenir la sécurité.
 
 ## Première configuration sécurisée
 
@@ -72,7 +79,7 @@ La construction vérifie notamment :
 
 - les bindings D1 et KV ;
 - la présence de la variable de version de session ;
-- la déclaration des secrets obligatoires ;
+- les références serveur aux secrets Cloudflare ;
 - l’absence de `.env` et `.dev.vars` réels ;
 - l’utilisation des secrets uniquement par `env` dans le Worker ;
 - l’utilisation exclusive du cookie de session `HttpOnly`.

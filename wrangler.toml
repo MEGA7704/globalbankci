@@ -4,14 +4,14 @@ compatibility_date = "2026-08-01"
 
 # Variable non sensible, chargée automatiquement dans env.SUPER_ADMIN_SESSION_VERSION.
 # Incrémentez cette valeur après chaque changement du mot de passe Super Admin
-# pour invalider toutes les sessions précédentes.
+# afin d'invalider toutes les sessions précédentes.
 [vars]
 SUPER_ADMIN_SESSION_VERSION = "1"
 
-# Les noms sont déclarés ici, mais jamais leurs valeurs.
-# Wrangler exigera que ces secrets chiffrés existent dans Cloudflare.
-[secrets]
-required = ["SUPER_ADMIN_LOGIN", "SUPER_ADMIN_PASSWORD"]
+# Les valeurs SUPER_ADMIN_LOGIN et SUPER_ADMIN_PASSWORD ne doivent jamais être
+# placées ici. Elles sont ajoutées comme secrets chiffrés dans Cloudflare Pages
+# et sont accessibles uniquement côté serveur via env.SUPER_ADMIN_LOGIN et
+# env.SUPER_ADMIN_PASSWORD.
 
 [[d1_databases]]
 binding = "DB"

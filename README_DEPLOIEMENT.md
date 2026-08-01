@@ -203,3 +203,7 @@ npm run test:security
 ```
 
 Consultez `RBAC_V9.md` pour la matrice et les principes de sécurité.
+
+## Mise à jour V10 — Tableau de bord Agent caisse
+
+La V10 ajoute une présentation bancaire professionnelle spécifique au rôle `agent_caisse` : navigation vert foncé et dorée, cartes quotidiennes, dernières opérations, état vide et responsive mobile/tablette. Les autorisations RBAC de la V9 restent inchangées : aucun accès aux paramètres ou rapports administratifs n'est accordé à l'Agent caisse.

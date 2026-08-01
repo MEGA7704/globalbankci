@@ -1,0 +1,15 @@
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const html=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
+assert.match(html,/cashierDashboardFrame/);
+assert.match(html,/cashierStatsGrid/);
+assert.match(html,/Dernières opérations réalisées/);
+assert.match(html,/Aucune opération pour le moment\./);
+assert.match(html,/Les opérations effectuées seront affichées ici\./);
+assert.match(html,/Espace Agent activé — toutes les fonctions autorisées sont contrôlées par le serveur\./);
+assert.match(html,/role-agent_caisse/);
+assert.match(html,/Bienvenue, \$\{name\}/);
+assert.match(html,/currentRoleKey\(\)==='agent_caisse'/);
+assert.doesNotMatch(html,/agent_caisse:\s*\[[^\]]*parametres/s);
+assert.doesNotMatch(html,/agent_caisse:\s*\[[^\]]*rapports/s);
+console.log('ALL CASHIER DASHBOARD V10 UI TESTS PASSED');

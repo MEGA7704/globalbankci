@@ -319,8 +319,8 @@ function parseCookies(request){const out={};for(const part of String(request.hea
 function sessionCookie(request,token){const secure=new URL(request.url).protocol==='https:'?'; Secure':'';return `${SESSION_COOKIE}=${encodeURIComponent(token)}; HttpOnly${secure}; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL}`;}
 function clearSessionCookie(request){const secure=new URL(request.url).protocol==='https:'?'; Secure':'';return `${SESSION_COOKIE}=; HttpOnly${secure}; SameSite=Strict; Path=/; Max-Age=0`;}
 function superLogin(env){return String(env.SUPER_ADMIN_LOGIN||'').trim();}
-function superSessionVersion(env){return String(env.SUPER_ADMIN_SESSION_VERSION||'1');}
-function ensureSuperSecrets(env){return !!(superLogin(env)&&String(env.SUPER_ADMIN_PASSWORD||''));}
+function superSessionVersion(env){return String(env.SUPER_ADMIN_SESSION_VERSION||'').trim();}
+function ensureSuperSecrets(env){return !!(superLogin(env)&&String(env.SUPER_ADMIN_PASSWORD||'')&&superSessionVersion(env));}
 function loginReserved(env,login){return !!superLogin(env)&&norm(login)===norm(superLogin(env));}
 async function loginExists(env,login,exclude={}){
  const b=await env.DB.prepare('SELECT id FROM banks WHERE login=? AND id<>? LIMIT 1').bind(login,String(exclude.bankId||'')).first();if(b)return true;
@@ -391,7 +391,7 @@ async function enforceRoleApiAccess(env,bankId,s,path,request){
 }
 async function createSession(env,payload){const token=crypto.randomUUID().replace(/-/g,'')+crypto.randomUUID().replace(/-/g,'');await env.KV.put('session:'+token,JSON.stringify({...payload,issuedAt:Date.now()}),{expirationTtl:SESSION_TTL});return token;}
 async function getSession(req,env){
- const auth=req.headers.get('authorization')||'';const bearer=auth.startsWith('Bearer ')?auth.slice(7):'';const token=bearer||parseCookies(req)[SESSION_COOKIE]||'';if(!token)return null;
+ const token=parseCookies(req)[SESSION_COOKIE]||'';if(!token)return null;
  const raw=await env.KV.get('session:'+token);if(!raw)return null;
  let s;try{s=JSON.parse(raw)}catch{await env.KV.delete('session:'+token);return null;}
  if(s.role==='super'){

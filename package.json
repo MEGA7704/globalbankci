@@ -1,10 +1,13 @@
 {
   "name": "global-bank-cloudflare",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/validate-build.mjs",
+    "build": "node scripts/validate-build.mjs && node scripts/check-cloudflare-config.mjs",
+    "config:check": "node scripts/check-cloudflare-config.mjs",
+    "secrets:configure": "node scripts/configure-cloudflare-secrets.mjs",
+    "secrets:list": "wrangler pages secret list --project-name global-bank",
     "dev": "wrangler pages dev public",
     "deploy": "wrangler pages deploy public --project-name global-bank",
     "db:migrate:remote": "wrangler d1 migrations apply bankdb --remote",

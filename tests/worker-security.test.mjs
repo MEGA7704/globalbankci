@@ -48,10 +48,26 @@ function containsHash(value){return JSON.stringify(value).includes('pbkdf2_sha25
 let r=await call('/api/status');assert.equal(r.res.status,200);
 r=await call('/api/load');assert.equal(r.res.status,401,'load must require session');
 
+// A missing session version disables Super Admin access (fail closed).
+const envMissingVersion={...env,SUPER_ADMIN_SESSION_VERSION:''};
+{
+  const req=new Request('https://example.pages.dev/api/login',{method:'POST',headers:{origin:'https://example.pages.dev','content-type':'application/json'},body:JSON.stringify({login:env.SUPER_ADMIN_LOGIN,pass:env.SUPER_ADMIN_PASSWORD})});
+  const res=await worker.fetch(req,envMissingVersion,{});
+  assert.equal(res.status,401,'super login must fail when required configuration is incomplete');
+}
+
 // Super Admin secret login via Worker only.
 r=await call('/api/login',{method:'POST',body:{login:env.SUPER_ADMIN_LOGIN,pass:env.SUPER_ADMIN_PASSWORD}});
 assert.equal(r.res.status,200);assert.ok(r.cookie.includes('gb_session='));const superCookie=r.cookie;assert.equal(r.json.role,'super');assert.equal('token' in r.json,false);
 r=await call('/api/load',{cookie:superCookie});assert.equal(r.res.status,200);assert.equal(r.json.role,'super');assert.equal(containsHash(r.json),false);
+
+// Bearer tokens are intentionally unsupported; only the HttpOnly cookie authenticates.
+{
+  const token=superCookie.split('=')[1];
+  const req=new Request('https://example.pages.dev/api/load',{headers:{authorization:`Bearer ${token}`}});
+  const res=await worker.fetch(req,env,{});
+  assert.equal(res.status,401,'Bearer authentication must remain disabled');
+}
 
 // Rate limiting per account/IP.
 for(let i=1;i<=5;i++){

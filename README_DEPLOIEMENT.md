@@ -50,7 +50,7 @@ Vous pouvez vérifier uniquement les **noms** des secrets configurés :
 ```bash
 npm run secrets:list
 ```
-   
+
 ## Développement local
 
 Copiez `.dev.vars.example` vers `.dev.vars`, puis saisissez uniquement des valeurs locales de test :
@@ -136,3 +136,22 @@ La section **Clients** contient un bouton **+ Nouveau client** placé sur la mê
 Les photos et logos sont optimisés dans le navigateur, stockés dans le binding KV existant `KV`, puis servis uniquement par la route authentifiée `GET /api/client/media`. D1 conserve les informations textuelles et une référence interne à l’image. Aucune nouvelle variable ni aucun nouveau binding Cloudflare n’est nécessaire.
 
 Les formats autorisés sont JPG, PNG et WebP. Les SVG et les fichiers trop volumineux sont refusés côté navigateur et côté Worker.
+
+
+## Messagerie interne Super Admin / entreprises — V6
+
+La section **Notifications** contient un bouton **Boîte de réception et d’envois** aligné avec le titre **Journal cloud**.
+
+- L’Administrateur banque dispose du bouton **Contacter le support** et peut envoyer un message ou une note au Super Admin.
+- Le Super Admin dispose d’une section **Messagerie** et peut envoyer un message ou une note à une ou plusieurs entreprises inscrites.
+- Chaque partie gère sa réception, ses envois, les statuts de lecture, la recherche, les filtres, l’historique et la suppression.
+- La suppression est séparée : retirer un message de la boîte d’une partie ne supprime pas automatiquement l’historique de l’autre partie.
+- Toutes les opérations sont contrôlées côté Worker. Une entreprise ne peut accéder qu’aux messages liés au `bank_id` de sa session.
+
+La table D1 `support_messages` est créée par la migration `migrations/0002_support_messages.sql`. Après mise à jour du dépôt, exécutez :
+
+```bash
+npm run db:migrate:remote
+```
+
+Aucune nouvelle variable ou liaison Cloudflare n’est nécessaire.

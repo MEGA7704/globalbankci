@@ -89,6 +89,22 @@ r=await call('/api/load',{cookie:bankCookie1});assert.equal(r.res.status,200);as
 
 // A client secret never comes back in /api/load, and account creation cannot cross tenants.
 r=await call('/api/login',{method:'POST',body:{login:bank2Login,pass:bank2Pass}});assert.equal(r.res.status,200,r.text);const bank2Cookie=r.cookie;
+
+
+// Secure internal messaging: bank -> Super Admin, Super Admin -> multiple banks, read status, tenant isolation and separate deletion.
+r=await call('/api/messages/send',{method:'POST',cookie:bankCookie1,body:{category:'message',subject:'Besoin assistance',body:'Merci de vérifier notre configuration.'}});assert.equal(r.res.status,200,r.text);
+let bank1Support=env.DB.prepare("SELECT * FROM support_messages WHERE recipient_bank_id=? AND sender_type='bank' ORDER BY created_at DESC LIMIT 1").bind(bank1Id).first();assert.ok(bank1Support?.id);assert.equal(bank1Support.sender_bank_id,bank1Id);
+r=await call('/api/super/messages',{cookie:superCookie});assert.equal(r.res.status,200,r.text);assert.ok(r.json.items.some(x=>x.id===bank1Support.id));
+r=await call('/api/super/messages/read',{method:'POST',cookie:superCookie,body:{id:bank1Support.id}});assert.equal(r.res.status,200,r.text);bank1Support=env.DB.prepare('SELECT * FROM support_messages WHERE id=?').bind(bank1Support.id).first();assert.ok(bank1Support.super_read_at);
+r=await call('/api/super/messages/send',{method:'POST',cookie:superCookie,body:{bank_ids:[bank1Id,bank2Id],category:'note',subject:'Maintenance planifiée',body:'Une maintenance est prévue ce soir.'}});assert.equal(r.res.status,200,r.text);assert.equal(r.json.count,2);
+const sentToBank1=env.DB.prepare("SELECT * FROM support_messages WHERE recipient_bank_id=? AND sender_type='super' AND subject=?").bind(bank1Id,'Maintenance planifiée').first();
+const sentToBank2=env.DB.prepare("SELECT * FROM support_messages WHERE recipient_bank_id=? AND sender_type='super' AND subject=?").bind(bank2Id,'Maintenance planifiée').first();assert.ok(sentToBank1?.id&&sentToBank2?.id);assert.equal(sentToBank1.broadcast_id,sentToBank2.broadcast_id);
+r=await call('/api/messages',{cookie:bankCookie1});assert.equal(r.res.status,200,r.text);assert.ok(r.json.items.some(x=>x.id===sentToBank1.id));assert.equal(r.json.items.some(x=>x.id===sentToBank2.id),false,'bank 1 must not list bank 2 messages');
+r=await call('/api/messages/read',{method:'POST',cookie:bankCookie1,body:{id:sentToBank1.id}});assert.equal(r.res.status,200,r.text);assert.ok(env.DB.prepare('SELECT bank_read_at FROM support_messages WHERE id=?').bind(sentToBank1.id).first().bank_read_at);
+r=await call('/api/messages/delete',{method:'POST',cookie:bankCookie1,body:{id:sentToBank2.id}});assert.equal(r.res.status,404,'bank 1 must not delete bank 2 messages');
+r=await call('/api/super/messages/delete',{method:'POST',cookie:superCookie,body:{id:bank1Support.id}});assert.equal(r.res.status,200,r.text);assert.equal(env.DB.prepare('SELECT deleted_by_super,deleted_by_bank FROM support_messages WHERE id=?').bind(bank1Support.id).first().deleted_by_super,1);
+r=await call('/api/messages',{cookie:bankCookie1});assert.ok(r.json.items.some(x=>x.id===bank1Support.id),'bank history remains after Super Admin deletes its own copy');
+r=await call('/api/messages/delete',{method:'POST',cookie:bankCookie1,body:{id:bank1Support.id}});assert.equal(r.res.status,200,r.text);assert.equal(env.DB.prepare('SELECT id FROM support_messages WHERE id=?').bind(bank1Support.id).first(),null,'message is physically removed only after both parties delete it');
 r=await call('/api/client',{method:'POST',cookie:bank2Cookie,body:{name:'Client Bank Two',contact:'0200000000',piece:'CI-2',pass:'NeverReturnThisClientSecret'}});assert.equal(r.res.status,200,r.text);
 const bank2Client=env.DB.prepare('SELECT id FROM clients WHERE bank_id=? AND name=?').bind(bank2Id,'Client Bank Two').first();assert.ok(bank2Client?.id);
 r=await call('/api/load',{cookie:bank2Cookie});assert.equal(r.res.status,200);assert.equal(JSON.stringify(r.json).includes('NeverReturnThisClientSecret'),false);assert.equal(Object.prototype.hasOwnProperty.call(r.json.clients[0]||{},'pass'),false);

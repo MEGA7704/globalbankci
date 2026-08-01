@@ -12,6 +12,9 @@ const BUSINESS_SUBSCRIPTION_DAYS = 365;
 const CLIENT_REQUEST_MAX_BYTES = 1200000;
 const CLIENT_IMAGE_MAX_DATAURL_CHARS = 850000;
 const CLIENT_DETAILS_MAX_CHARS = 16000;
+const SUPPORT_MESSAGE_SUBJECT_MAX_CHARS = 160;
+const SUPPORT_MESSAGE_BODY_MAX_CHARS = 5000;
+const SUPPORT_MESSAGE_RECIPIENT_MAX = 200;
 
 const DEFAULT_CHARGE_BASES_BANK_MANAGER = [
  ['Frais Compte courant','Frais',0],['Frais Compte épargne','Frais',0],['Frais Compte entreprise','Frais',0],['Frais Compte association','Frais',0],['Frais Dépôt à terme','Frais',0],['Frais Compte crédit','Frais',0],['Frais Dépôt espèces','Frais',0],['Frais Retrait espèces','Frais',0],['Frais de recouvrement','Frais',0],['Frais de relevé bancaire','Frais',0],['Frais de clôture','Frais',0],['Frais de gestion mensuelle','Frais',0],['Frais Carnet','Frais',0]
@@ -47,6 +50,7 @@ CREATE TABLE IF NOT EXISTS movement_types (id TEXT PRIMARY KEY,bank_id TEXT NOT 
 CREATE TABLE IF NOT EXISTS manual_revenues (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,operations INTEGER DEFAULT 0,amount REAL DEFAULT 0,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS ignored_revenues (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,revenue_key TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS management_settings (bank_id TEXT PRIMARY KEY,year INTEGER NOT NULL,month INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'open',updated_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS support_messages (id TEXT PRIMARY KEY,broadcast_id TEXT DEFAULT '',sender_type TEXT NOT NULL,sender_bank_id TEXT DEFAULT '',recipient_bank_id TEXT NOT NULL,category TEXT NOT NULL DEFAULT 'message',subject TEXT NOT NULL,body TEXT NOT NULL,bank_read_at TEXT DEFAULT '',super_read_at TEXT DEFAULT '',deleted_by_bank INTEGER NOT NULL DEFAULT 0,deleted_by_super INTEGER NOT NULL DEFAULT 0,created_by TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 
 `;
 
@@ -423,6 +427,27 @@ async function loginExists(env,login,exclude={}){
  const b=await env.DB.prepare('SELECT id FROM banks WHERE login=? AND id<>? LIMIT 1').bind(login,String(exclude.bankId||'')).first();if(b)return true;
  const u=await env.DB.prepare('SELECT id FROM users WHERE login=? AND id<>? LIMIT 1').bind(login,String(exclude.userId||'')).first();return !!u;
 }
+
+function cleanSupportText(value,max){return String(value||'').replace(/\u0000/g,'').trim().slice(0,max);}
+function normalizeSupportCategory(value){return norm(value)==='note'?'note':'message';}
+function supportMessageSelect(){return `SELECT m.id,m.broadcast_id,m.sender_type,m.sender_bank_id,m.recipient_bank_id,m.category,m.subject,m.body,m.bank_read_at,m.super_read_at,m.deleted_by_bank,m.deleted_by_super,m.created_by,m.created_at,b.name AS bank_name,b.manager AS bank_manager FROM support_messages m LEFT JOIN banks b ON b.id=m.recipient_bank_id`;}
+function safeSupportMessagePayload(raw){
+ const category=normalizeSupportCategory(raw&&raw.category);
+ const subject=cleanSupportText(raw&&raw.subject,SUPPORT_MESSAGE_SUBJECT_MAX_CHARS);
+ const content=cleanSupportText(raw&&(raw.body||raw.content),SUPPORT_MESSAGE_BODY_MAX_CHARS);
+ if(!subject)return {error:'Objet obligatoire.'};
+ if(!content)return {error:'Contenu obligatoire.'};
+ return {category,subject,body:content};
+}
+async function listBankSupportMessages(env,bankId){
+ const rows=await env.DB.prepare(supportMessageSelect()+" WHERE m.recipient_bank_id=? AND COALESCE(m.deleted_by_bank,0)=0 ORDER BY m.created_at DESC LIMIT 1000").bind(bankId).all();
+ return rows.results||[];
+}
+async function listSuperSupportMessages(env){
+ const rows=await env.DB.prepare(supportMessageSelect()+" WHERE COALESCE(m.deleted_by_super,0)=0 ORDER BY m.created_at DESC LIMIT 3000").all();
+ return rows.results||[];
+}
+
 async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA); const bankCols=[
   "email TEXT DEFAULT ''","slogan TEXT DEFAULT ''","logo TEXT DEFAULT ''","stamp TEXT DEFAULT ''","signature TEXT DEFAULT ''",
   "primary_color TEXT DEFAULT '#003b3b'","secondary_color TEXT DEFAULT '#e7ad2f'",
@@ -445,7 +470,10 @@ async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA
   'CREATE INDEX IF NOT EXISTS idx_accounts_bank ON accounts(bank_id)',
   'CREATE INDEX IF NOT EXISTS idx_moves_bank ON moves(bank_id)',
   'CREATE INDEX IF NOT EXISTS idx_users_bank ON users(bank_id)',
-  "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_global ON users(login) WHERE login IS NOT NULL AND login<>''"
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_global ON users(login) WHERE login IS NOT NULL AND login<>''",
+  'CREATE INDEX IF NOT EXISTS idx_support_messages_bank ON support_messages(recipient_bank_id,created_at)',
+  'CREATE INDEX IF NOT EXISTS idx_support_messages_super ON support_messages(deleted_by_super,created_at)',
+  'CREATE INDEX IF NOT EXISTS idx_support_messages_broadcast ON support_messages(broadcast_id)'
  ]){try{await env.DB.exec(sql)}catch(e){}}
  schemaReady=true;}
 
@@ -648,6 +676,38 @@ async function handleApi(request,env,path){
    await env.DB.prepare("INSERT INTO management_settings(bank_id,year,month,status,updated_at) VALUES(?,?,?,?,datetime('now')) ON CONFLICT(bank_id) DO UPDATE SET year=excluded.year,month=excluded.month,status=excluded.status,updated_at=datetime('now')").bind(s.bankId,y,m,status).run();return json({ok:true});
   }
   if(path.startsWith('/api/super/')||path==='/api/bank/action'){if(s.role!=='super')return json({error:'Action réservée au Super Admin.'},403);}
+  if(path==='/api/super/messages'&&request.method==='GET'&&s.role==='super'){
+   return json({items:await listSuperSupportMessages(env)});
+  }
+  if(path==='/api/super/messages/send'&&request.method==='POST'&&s.role==='super'){
+   const raw=await body(request);const parsed=safeSupportMessagePayload(raw);if(parsed.error)return json({error:parsed.error},400);
+   let bankIds=Array.isArray(raw.bank_ids)?raw.bank_ids.map(x=>String(x||'').trim()).filter(Boolean):[];
+   bankIds=Array.from(new Set(bankIds)).slice(0,SUPPORT_MESSAGE_RECIPIENT_MAX);
+   if(!bankIds.length)return json({error:'Sélectionnez au moins une entreprise destinataire.'},400);
+   const placeholders=bankIds.map(()=>'?').join(',');
+   const existing=await env.DB.prepare(`SELECT id,name FROM banks WHERE id IN (${placeholders})`).bind(...bankIds).all();
+   const valid=existing.results||[];if(valid.length!==bankIds.length)return json({error:'Une ou plusieurs entreprises destinataires sont introuvables.'},404);
+   const broadcastId=uid('BCAST');
+   const statements=valid.map(bank=>env.DB.prepare('INSERT INTO support_messages(id,broadcast_id,sender_type,sender_bank_id,recipient_bank_id,category,subject,body,created_by) VALUES(?,?,?,?,?,?,?,?,?)').bind(uid('MSG'),broadcastId,'super','',bank.id,parsed.category,parsed.subject,parsed.body,'Super Admin'));
+   await env.DB.batch(statements);
+   for(const bank of valid){try{await addLog(env,bank.id,(parsed.category==='note'?'Note':'Message')+' reçu du Super Admin : '+parsed.subject);}catch(e){}}
+   await addSecurityLog(env,'',s,'Envoi '+(parsed.category==='note'?'note':'message'),'Messagerie Super Admin','autorisé',valid.length+' entreprise(s) destinataire(s)');
+   return json({ok:true,count:valid.length,broadcast_id:broadcastId});
+  }
+  if(path==='/api/super/messages/read'&&request.method==='POST'&&s.role==='super'){
+   const raw=await body(request);const id=String(raw.id||'');if(!id)return json({error:'Message obligatoire.'},400);
+   const row=await env.DB.prepare('SELECT id,sender_type FROM support_messages WHERE id=? AND COALESCE(deleted_by_super,0)=0').bind(id).first();if(!row)return json({error:'Message introuvable.'},404);
+   if(row.sender_type==='bank')await env.DB.prepare("UPDATE support_messages SET super_read_at=COALESCE(NULLIF(super_read_at,''),datetime('now')) WHERE id=?").bind(id).run();
+   return json({ok:true});
+  }
+  if(path==='/api/super/messages/delete'&&request.method==='POST'&&s.role==='super'){
+   const raw=await body(request);const id=String(raw.id||'');if(!id)return json({error:'Message obligatoire.'},400);
+   const row=await env.DB.prepare('SELECT id,recipient_bank_id,subject FROM support_messages WHERE id=? AND COALESCE(deleted_by_super,0)=0').bind(id).first();if(!row)return json({error:'Message introuvable.'},404);
+   await env.DB.prepare('UPDATE support_messages SET deleted_by_super=1 WHERE id=?').bind(id).run();
+   await env.DB.prepare('DELETE FROM support_messages WHERE id=? AND deleted_by_super=1 AND deleted_by_bank=1').bind(id).run();
+   await addSecurityLog(env,row.recipient_bank_id||'',s,'Suppression message','Messagerie Super Admin','autorisé',row.subject||'');
+   return json({ok:true});
+  }
   if(path==='/api/super/user'&&request.method==='POST'&&s.role==='super'){
    return json({error:'La création des utilisateurs est réservée à l’Administrateur banque.'},403);
   }
@@ -669,7 +729,7 @@ async function handleApi(request,env,path){
    else if(b.action==='reset'){const password=String(b.newpass||'');const weak=assertPasswordStrength(password);if(weak)return json({error:weak},400);const passHash=await hashPassword(password);await env.DB.prepare('UPDATE banks SET pass=?,auth_version=COALESCE(auth_version,1)+1 WHERE id=?').bind(passHash,bank.id).run();await addSecurityLog(env,bank.id,s,'Réinitialisation mot de passe Administrateur banque','Super Admin','autorisé','Toutes les sessions précédentes invalidées');}
    else if(b.action==='delete'){
     const id=bank.id;await env.DB.batch([
-     env.DB.prepare('DELETE FROM moves WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM accounts WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM clients WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM users WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM logs WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM security_logs WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM charge_bases WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM obligations WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM reset_requests WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM account_types WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM movement_types WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM manual_revenues WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM ignored_revenues WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM management_settings WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM banks WHERE id=?').bind(id)
+     env.DB.prepare('DELETE FROM moves WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM accounts WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM clients WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM users WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM logs WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM security_logs WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM charge_bases WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM obligations WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM reset_requests WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM account_types WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM movement_types WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM manual_revenues WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM ignored_revenues WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM management_settings WHERE bank_id=?').bind(id),env.DB.prepare('DELETE FROM support_messages WHERE recipient_bank_id=? OR sender_bank_id=?').bind(id,id),env.DB.prepare('DELETE FROM banks WHERE id=?').bind(id)
     ]);
    }else return json({error:'Action inconnue.'},400);
    return json({ok:true});
@@ -677,6 +737,35 @@ async function handleApi(request,env,path){
   if(s.role!=='bank')return json({error:'Action réservée à une banque.'},403); const bankId=s.bankId; await requireActiveBankSubscription(env,bankId);
   const roleDenied=await enforceRoleApiAccess(env,bankId,s,path,request); if(roleDenied)return roleDenied;
 
+  if(path==='/api/messages'&&request.method==='GET'){
+   if(sessionRoleKey(s)!=='admin_bank')return json({error:'Messagerie réservée à l’Administrateur banque.'},403);
+   return json({items:await listBankSupportMessages(env,bankId)});
+  }
+  if(path==='/api/messages/send'&&request.method==='POST'){
+   if(sessionRoleKey(s)!=='admin_bank')return json({error:'Messagerie réservée à l’Administrateur banque.'},403);
+   const raw=await body(request);const parsed=safeSupportMessagePayload(raw);if(parsed.error)return json({error:parsed.error},400);
+   const bank=await env.DB.prepare('SELECT name,manager FROM banks WHERE id=?').bind(bankId).first();if(!bank)return json({error:'Entreprise introuvable.'},404);
+   await env.DB.prepare('INSERT INTO support_messages(id,broadcast_id,sender_type,sender_bank_id,recipient_bank_id,category,subject,body,created_by) VALUES(?,?,?,?,?,?,?,?,?)').bind(uid('MSG'),uid('THREAD'),'bank',bankId,bankId,parsed.category,parsed.subject,parsed.body,String(s.userName||bank.manager||'Administrateur banque')).run();
+   await addLog(env,bankId,(parsed.category==='note'?'Note':'Message')+' envoyé au Super Admin : '+parsed.subject);
+   await addSecurityLog(env,bankId,s,'Envoi '+(parsed.category==='note'?'note':'message'),'Support','autorisé',parsed.subject);
+   return json({ok:true});
+  }
+  if(path==='/api/messages/read'&&request.method==='POST'){
+   if(sessionRoleKey(s)!=='admin_bank')return json({error:'Messagerie réservée à l’Administrateur banque.'},403);
+   const raw=await body(request);const id=String(raw.id||'');if(!id)return json({error:'Message obligatoire.'},400);
+   const row=await env.DB.prepare('SELECT id,sender_type FROM support_messages WHERE id=? AND recipient_bank_id=? AND COALESCE(deleted_by_bank,0)=0').bind(id,bankId).first();if(!row)return json({error:'Message introuvable.'},404);
+   if(row.sender_type==='super')await env.DB.prepare("UPDATE support_messages SET bank_read_at=COALESCE(NULLIF(bank_read_at,''),datetime('now')) WHERE id=? AND recipient_bank_id=?").bind(id,bankId).run();
+   return json({ok:true});
+  }
+  if(path==='/api/messages/delete'&&request.method==='POST'){
+   if(sessionRoleKey(s)!=='admin_bank')return json({error:'Messagerie réservée à l’Administrateur banque.'},403);
+   const raw=await body(request);const id=String(raw.id||'');if(!id)return json({error:'Message obligatoire.'},400);
+   const row=await env.DB.prepare('SELECT id,subject FROM support_messages WHERE id=? AND recipient_bank_id=? AND COALESCE(deleted_by_bank,0)=0').bind(id,bankId).first();if(!row)return json({error:'Message introuvable.'},404);
+   await env.DB.prepare('UPDATE support_messages SET deleted_by_bank=1 WHERE id=? AND recipient_bank_id=?').bind(id,bankId).run();
+   await env.DB.prepare('DELETE FROM support_messages WHERE id=? AND deleted_by_super=1 AND deleted_by_bank=1').bind(id).run();
+   await addSecurityLog(env,bankId,s,'Suppression message','Boîte de réception et d’envois','autorisé',row.subject||'');
+   return json({ok:true});
+  }
   if(path==='/api/client/media'&&request.method==='GET'){
    const clientId=String(new URL(request.url).searchParams.get('id')||'').trim();if(!clientId)return new Response('Image introuvable.',{status:404});
    const row=await env.DB.prepare('SELECT id,photo_logo FROM clients WHERE id=? AND bank_id=? AND COALESCE(is_deleted,0)=0').bind(clientId,bankId).first();

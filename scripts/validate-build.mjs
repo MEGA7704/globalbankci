@@ -1,6 +1,6 @@
 import { readFile, access } from 'node:fs/promises';
 
-const required = ['public/index.html', 'public/_worker.js', 'wrangler.toml', 'migrations/0001_schema.sql'];
+const required = ['public/index.html', 'public/_worker.js', 'wrangler.toml', 'migrations/0001_schema.sql', 'migrations/0002_support_messages.sql'];
 for (const file of required) await access(file);
 
 const worker = await readFile('public/_worker.js', 'utf8');
@@ -20,10 +20,13 @@ if (/localStorage\.setItem\(['"]bmp_management_settings/i.test(html)) throw new 
 const requiredClientUi = [
   'Liste des clients', '+ Nouveau client', 'Personne physique', 'Personne morale',
   'Informations de l’entreprise', 'Représentant légal de l’entreprise',
-  'Informations du client personnel', 'clientOptimizeImage'
+  'Informations du client personnel', 'clientOptimizeImage', 'Boîte de réception et d’envois', 'Contacter le support', 'mailboxPage'
 ];
 for (const marker of requiredClientUi) {
   if (!html.includes(marker)) throw new Error(`Formulaire client incomplet : ${marker}`);
+}
+if (!worker.includes('support_messages') || !worker.includes('/api/super/messages/send') || !worker.includes('/api/messages/send')) {
+  throw new Error('Messagerie sécurisée Super Admin / entreprises absente.');
 }
 if (!worker.includes('normalizeClientPayload') || !worker.includes('CLIENT_IMAGE_MAX_DATAURL_CHARS')) {
   throw new Error('Validation serveur du formulaire client absente.');

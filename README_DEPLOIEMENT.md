@@ -2,6 +2,11 @@
 
 Cette version relie directement le Worker aux ressources Cloudflare sans inscrire les identifiants Super Admin dans le dépôt.
 
+
+## Interface agents V11
+
+Les sessions Agent caisse, Agent crédit et Auditeur utilisent maintenant une interface bancaire professionnelle commune. Les menus restent strictement limités aux autorisations RBAC de chaque rôle. Le doublon « Déconnexion » a été retiré du menu horizontal ; le bouton de sortie unique se trouve dans le bloc utilisateur.
+
 ## Configuration GitHub / Cloudflare Pages
 
 - Branche de production : `main`

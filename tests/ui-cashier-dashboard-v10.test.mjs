@@ -9,7 +9,7 @@ assert.match(html,/Les opérations effectuées seront affichées ici\./);
 assert.match(html,/Espace Agent activé — toutes les fonctions autorisées sont contrôlées par le serveur\./);
 assert.match(html,/role-agent_caisse/);
 assert.match(html,/Bienvenue, \$\{name\}/);
-assert.match(html,/currentRoleKey\(\)==='agent_caisse'/);
+assert.match(html,/\['agent_caisse','agent_credit','auditeur'\]\.includes\(currentRoleKey\(\)\)/);
 assert.doesNotMatch(html,/agent_caisse:\s*\[[^\]]*parametres/s);
 assert.doesNotMatch(html,/agent_caisse:\s*\[[^\]]*rapports/s);
 console.log('ALL CASHIER DASHBOARD V10 UI TESTS PASSED');

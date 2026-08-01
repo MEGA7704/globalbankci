@@ -1261,8 +1261,8 @@ body.modal-open{overflow:hidden}.proModalBackdrop{position:fixed!important;inset
 /* GLOBAL BANK V9 — RBAC */
 .permissionPolicyBox{grid-column:1/-1}.permissionGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.permissionGrid>div{display:grid;gap:8px;padding:14px;border:1px solid #dfe8ef;border-radius:14px;background:#fbfdff}.permissionGrid label{display:flex;gap:8px;align-items:flex-start;font-size:12px;font-weight:800;color:#24464b}.permissionGrid input{width:auto;margin-top:2px}.roleNotice{margin:0 0 16px;padding:13px 16px;border-radius:14px;background:#eff8f7;border:1px solid #b7ded9;color:#164b49;font-weight:850}.readonlyBanner{padding:12px 14px;margin-bottom:14px;border-radius:12px;background:#fff8db;border:1px solid #efd37a;color:#644a00;font-weight:850}@media(max-width:760px){.permissionGrid{grid-template-columns:1fr}}
 
-/* === GLOBAL BANK V10 — TABLEAU DE BORD PROFESSIONNEL AGENT CAISSE === */
-.app.role-agent_caisse{
+/* === GLOBAL BANK V11 — INTERFACES PROFESSIONNELLES DES AGENTS === */
+.app:is(.role-agent_caisse,.role-agent_credit,.role-auditeur){
   --cashier-deep:#003F36;
   --cashier-emerald:#005C4B;
   --cashier-soft:#EAF4EF;
@@ -1275,47 +1275,47 @@ body.modal-open{overflow:hidden}.proModalBackdrop{position:fixed!important;inset
     radial-gradient(circle at 12% 20%,rgba(212,175,55,.12),transparent 25%);
   min-height:100vh;
 }
-.role-agent_caisse .topbar{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .topbar{
   min-height:78px;
   background:linear-gradient(90deg,var(--cashier-deep),#00382f 58%,#002f29);
   border-bottom:1px solid rgba(212,175,55,.42);
   box-shadow:0 12px 34px rgba(0,25,22,.25);
   padding:0 24px;
 }
-.role-agent_caisse .logo{min-width:245px;gap:11px;font-size:20px;line-height:1.05}
-.role-agent_caisse .logo .ico{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logo{min-width:245px;gap:11px;font-size:20px;line-height:1.05}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logo .ico{
   width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
   background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
   color:#fff;font-size:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
 }
-.role-agent_caisse .logo .ico svg{width:29px;height:29px;stroke:#fff;fill:none}
-.role-agent_caisse .logo span{color:var(--cashier-gold)}
-.role-agent_caisse .menu{height:78px;justify-content:center;gap:7px}
-.role-agent_caisse .menu button{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logo .ico svg{width:29px;height:29px;stroke:#fff;fill:none}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logo span{color:var(--cashier-gold)}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu{height:78px;justify-content:center;gap:7px}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button{
   height:44px;padding:0 13px;border-radius:12px;color:#f4fbf8;
   display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;
   font-size:12px;font-weight:850;letter-spacing:.01em;
 }
-.role-agent_caisse .menu button .navSvg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.role-agent_caisse .menu button:hover{background:rgba(255,255,255,.075);color:#fff}
-.role-agent_caisse .menu button.active{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button .navSvg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button:hover{background:rgba(255,255,255,.075);color:#fff}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button.active{
   background:rgba(0,92,75,.78);border-color:var(--cashier-gold);color:var(--cashier-gold);
   box-shadow:0 8px 22px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.08);
 }
-.role-agent_caisse .menu button.active:after{display:none}
-.role-agent_caisse .profile{gap:10px;padding-left:14px;margin-left:10px}
-.role-agent_caisse .searchIcon{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button.active:after{display:none}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .profile{gap:10px;padding-left:14px;margin-left:10px}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .searchIcon{
   width:39px;height:39px;border:1px solid rgba(255,255,255,.18);border-radius:12px;
   background:rgba(255,255,255,.075);padding:9px;
 }
-.role-agent_caisse .searchIcon svg{width:100%;height:100%;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.role-agent_caisse .userBlock b{font-size:13px;color:#fff;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.role-agent_caisse .userBlock small{color:#d4e7e1;font-size:11px;font-weight:700}
-.role-agent_caisse .logoutProfile{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .searchIcon svg{width:100%;height:100%;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .userBlock b{font-size:13px;color:#fff;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .userBlock small{color:#d4e7e1;font-size:11px;font-weight:700}
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logoutProfile{
   text-transform:uppercase;background:rgba(0,44,38,.8);border:1px solid rgba(255,255,255,.28);
   padding:9px 11px;border-radius:11px;font-size:10px;letter-spacing:.04em;
 }
-.role-agent_caisse .main{
+:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .main{
   padding:26px 32px 34px;
   background:
     linear-gradient(135deg,rgba(255,255,255,.035),transparent 38%),
@@ -1381,24 +1381,24 @@ body.modal-open{overflow:hidden}.proModalBackdrop{position:fixed!important;inset
 .cashierEmptyState svg{width:66px;height:66px;stroke:#8aa39a;fill:none;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round;margin-bottom:14px}
 .cashierEmptyState b{display:block;color:#385a53;font-size:17px;margin-bottom:7px}.cashierEmptyState span{font-size:13px;color:#82918c}
 @media(max-width:1180px){
-  .role-agent_caisse .topbar{padding:0 16px}.role-agent_caisse .logo{min-width:200px}.role-agent_caisse .menu button{padding:0 9px;font-size:11px}
+  :is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .topbar{padding:0 16px}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logo{min-width:200px}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button{padding:0 9px;font-size:11px}
   .cashierStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:900px){
-  .role-agent_caisse .topbar{padding:10px 12px!important}.role-agent_caisse .logo{min-width:0}.role-agent_caisse .menu{height:auto}
-  .role-agent_caisse .menu button{height:auto;min-height:46px;font-size:12px}
-  .role-agent_caisse .profile{padding-top:8px;margin-left:0}.role-agent_caisse .main{padding:16px!important}
+  :is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .topbar{padding:10px 12px!important}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logo{min-width:0}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu{height:auto}
+  :is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .menu button{height:auto;min-height:46px;font-size:12px}
+  :is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .profile{padding-top:8px;margin-left:0}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .main{padding:16px!important}
   .cashierDashboardFrame{padding:17px;border-radius:21px}.cashierPageHeading{align-items:flex-start;flex-direction:column}.cashierSecureBadge{align-self:flex-start}
 }
 @media(max-width:620px){
   .cashierStatsGrid{grid-template-columns:1fr;gap:11px}.cashierStatCard{min-height:108px;padding:15px}.cashierStatValue{font-size:22px}
   .cashierDashboardFrame{padding:13px;border-radius:18px}.cashierInfoBanner{align-items:flex-start}.cashierOperationsPanel{padding:13px}.cashierPageHeading h1{font-size:21px}
-  .role-agent_caisse .userBlock b{max-width:150px}.role-agent_caisse .logoutProfile{font-size:0}.role-agent_caisse .logoutProfile:after{content:'↪';font-size:18px}
+  :is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .userBlock b{max-width:150px}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logoutProfile{font-size:0}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .logoutProfile:after{content:'↪';font-size:18px}
 }
 @media print{
-  .role-agent_caisse .topbar,.cashierSecureBadge{display:none!important}.role-agent_caisse .main{padding:0!important}.cashierDashboardFrame{border:0;box-shadow:none;padding:0}.cashierOperationsPanel,.cashierStatCard{box-shadow:none}
+  :is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .topbar,.cashierSecureBadge{display:none!important}:is(.role-agent_caisse,.role-agent_credit,.role-auditeur) .main{padding:0!important}.cashierDashboardFrame{border:0;box-shadow:none;padding:0}.cashierOperationsPanel,.cashierStatCard{box-shadow:none}
 }
-/* === FIN TABLEAU DE BORD AGENT CAISSE V10 === */
+/* === FIN INTERFACES PROFESSIONNELLES DES AGENTS V11 === */
 
 </style>
 
@@ -1514,23 +1514,25 @@ body.modal-open{overflow:hidden}.proModalBackdrop{position:fixed!important;inset
 
 const $=id=>document.getElementById(id);let token='';let data=null,role=null,active='dashboard';let accountTypeFilter='ALL';let accountSearch='';let clientSearch='';let moveSearch='';let clientListPage=1;let accountListPage=1;let moveListPage=1;const LIST_PAGE_SIZE=15;let editingObligationId=null;let mailboxState={items:[],loaded:false,loading:false,error:'',filter:'all',search:''};
 const ROLE_MENUS={
- super_admin:['superdash','banques','mailbox','rapports','notifications','logout'],
- admin_bank:['dashboard','clients','comptes','mouvements','credit','gestion','utilisateurs','rapports','parametres','securite','corrections','mailbox','notifications','logout'],
- agent_caisse:['dashboard','clients','comptes','caisse','mesoperations','corrections','logout'],
- agent_credit:['dashboard','clients','credit','corrections','logout'],
- auditeur:['dashboard','clients','comptes','mouvements','auditrapports','logout']
+ super_admin:['superdash','banques','mailbox','rapports','notifications'],
+ admin_bank:['dashboard','clients','comptes','mouvements','credit','gestion','utilisateurs','rapports','parametres','securite','corrections','mailbox','notifications'],
+ agent_caisse:['dashboard','clients','comptes','caisse','mesoperations','corrections'],
+ agent_credit:['dashboard','clients','credit','corrections'],
+ auditeur:['dashboard','clients','comptes','mouvements','auditrapports']
 };
 const labels={dashboard:'🏠 Tableau de bord',clients:'👥 Clients',comptes:'💳 Comptes',mouvements:'🔁 Mouvements',mesoperations:'🧾 Mes opérations',gestion:'📅 Exercices',caisse:'💰 Nouvelle opération',credit:'💼 Crédits',corrections:'📝 Demandes de correction',rapports:'📊 Rapports',auditrapports:'📄 Rapports consultables',utilisateurs:'👨‍💼 Agents et utilisateurs',parametres:'⚙️ Paramètres',securite:'🔐 Sécurité',notifications:'🔔 Notifications',mailbox:'✉️ Messagerie',logout:'↪ Déconnexion',superdash:'🏠 Tableau de bord',banques:'🏦 Banques'};
-const CASHIER_NAV_META={
+const AGENT_NAV_META={
  dashboard:{label:'Tableau de bord',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-6h5v6"></path></svg>'},
  clients:{label:'Clients',icon:'<svg class="navSvg" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 20c.5-4 2.3-6 5.5-6s5 2 5.5 6"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M15.5 14.5c3.1-.5 5 1.3 5.5 4.5"></path></svg>'},
  comptes:{label:'Comptes',icon:'<svg class="navSvg" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M3 10h18M7 15h4"></path></svg>'},
  caisse:{label:'Mouvements',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"></path><path d="m18 7-3 3M6 17l3-3"></path></svg>'},
+ mouvements:{label:'Mouvements',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"></path><path d="m18 7-3 3M6 17l3-3"></path></svg>'},
  mesoperations:{label:'Mes opérations',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M7 4h10M7 9h10M7 14h7M5 3v2M5 8v2M5 13v2"></path><path d="M4 19h16"></path></svg>'},
- corrections:{label:'Corrections',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4M9 12h6M9 16h5"></path></svg>'},
- logout:{label:'Déconnexion',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"></path></svg>'}
+ credit:{label:'Crédits',icon:'<svg class="navSvg" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 5V3M16 5V3M4 10h16M8 14h3M8 17h6"></path></svg>'},
+ auditrapports:{label:'Rapports',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"></path><path d="M15 3v5h5M8 13h8M8 17h6"></path></svg>'},
+ corrections:{label:'Corrections',icon:'<svg class="navSvg" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4M9 12h6M9 16h5"></path></svg>'}
 };
-function menuLabelForRole(key){const meta=currentRoleKey()==='agent_caisse'&&CASHIER_NAV_META[key];return meta?`${meta.icon}<span>${meta.label}</span>`:(labels[key]||key)}
+function menuLabelForRole(key){const isAgent=['agent_caisse','agent_credit','auditeur'].includes(currentRoleKey());const meta=isAgent&&AGENT_NAV_META[key];return meta?`${meta.icon}<span>${meta.label}</span>`:(labels[key]||key)}
 
 const ROLE_DEFAULT_PERMISSIONS={
  admin_bank:['ALL'],
@@ -1791,12 +1793,13 @@ async function login(ev){
 async function load(){data=await api('/me');role=data.role}async function refresh(){await load();render()}
 function applyRoleShell(){
  const app=$('app'),key=currentRoleKey(),name=role==='super'?'Super Admin':((data&&data.user&&data.user.name)||(data&&data.bank&&data.bank.manager)||'Utilisateur');
+ const isAgent=['agent_caisse','agent_credit','auditeur'].includes(key);
  if(app)app.className=`app role-${key}`;
  const profileName=$('profileName'),profileRole=$('profileRole'),logoutBtn=document.querySelector('.logoutProfile'),logoIcon=document.querySelector('.logo .ico'),profileIcon=document.querySelector('.searchIcon');
- if(profileName)profileName.textContent=key==='agent_caisse'?`Bienvenue, ${name}`:name;
+ if(profileName)profileName.textContent=isAgent?`Bienvenue, ${name}`:name;
  if(profileRole)profileRole.textContent=role==='super'?'Contrôle central':currentRoleLabel();
- if(logoutBtn)logoutBtn.textContent=key==='agent_caisse'?'DÉCONNEXION':'↪ Déconnexion';
- if(key==='agent_caisse'){
+ if(logoutBtn)logoutBtn.textContent=isAgent?'DÉCONNEXION':'↪ Déconnexion';
+ if(isAgent){
   if(logoIcon)logoIcon.innerHTML='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 18 24 8l18 10"></path><path d="M9 19h30M8 38h32M12 35V22M20 35V22M28 35V22M36 35V22"></path></svg>';
   if(profileIcon)profileIcon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-4.3 2.9-6.5 7-6.5s6.4 2.2 7 6.5"></path></svg>';
  }else{
@@ -2560,13 +2563,63 @@ function cashierDashboard(){
   <section class="cashierOperationsPanel"><div class="cashierOperationsTitle"><h2>Dernières opérations réalisées</h2><span>${latest.length} opération(s)</span></div><div class="cashierTableWrap"><table class="cashierDashboardTable"><thead><tr><th>N° Opération</th><th>Date</th><th>Client</th><th>Compte</th><th>Type</th><th>Description</th><th>Montant</th><th>Solde après</th></tr></thead><tbody>${tableRows||empty}</tbody></table></div></section>
  </section>`
 }
-function creditDashboard(){const credits=accountsArr().filter(a=>isCreditTypeName(a.type));const remaining=credits.reduce((a,x)=>a+Number(officialAccountBalance(x)||0),0);const payments=movesArr().filter(isCreditPaymentMove);return welcome()+roleIntro()+`<section class="stats"><div class="card"><h3>Dossiers crédit</h3><div class="value">${credits.length}</div></div><div class="card"><h3>Capital accordé</h3><div class="value">${money(credits.reduce((a,x)=>a+Number(x.credit_amount||0),0))}</div></div><div class="card"><h3>Paiements enregistrés</h3><div class="value">${payments.length}</div></div><div class="card"><h3>Reste à rembourser</h3><div class="value">${money(remaining)}</div></div></section><section class="panel"><h2>Dernières opérations crédit</h2>${oldMoveTable(movesArr().slice(0,20))}</section>`}
+function creditDashboard(){
+ const credits=accountsArr().filter(a=>isCreditTypeName(a.type));
+ const creditIds=new Set(credits.map(a=>String(a.id||'')));
+ const toTime=v=>{const d=new Date(String(v||'').replace(' ','T'));return Number.isFinite(d.getTime())?d.getTime():0};
+ const creditMoves=movesArr().filter(m=>creditIds.has(String(m.account_id||m.accountId||''))||isCreditPaymentMove(m)).sort((a,b)=>toTime(b.created_at)-toTime(a.created_at));
+ const payments=creditMoves.filter(isCreditPaymentMove);
+ const capital=credits.reduce((a,x)=>a+Number(x.credit_amount||0),0);
+ const remaining=credits.reduce((a,x)=>a+Math.max(0,Number(officialAccountBalance(x)||0)),0);
+ const latest=creditMoves.slice(0,20);
+ const tableRows=latest.map(m=>{
+  const account=accountsArr().find(a=>String(a.id)===String(m.account_id||m.accountId||''))||{};
+  const d=new Date(String(m.created_at||'').replace(' ','T'));
+  const dateLabel=Number.isFinite(d.getTime())?d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):escapeHtml(m.created_at||'—');
+  return `<tr><td><b>CR-${escapeHtml(movementRegisterNo(m))}</b></td><td>${dateLabel}</td><td>${escapeHtml(clientName(account.client_id))}</td><td><b>${escapeHtml(account.number||'—')}</b></td><td><span class="cashierMoveType">${escapeHtml(m.type||'—')}</span></td><td>${escapeHtml(m.description||'—')}</td><td class="amountCell">${money(Math.abs(Number(m.amount||0)))}</td><td class="balanceCell">${money(officialMovementBalanceAfter(m,account))}</td></tr>`;
+ }).join('');
+ const empty=`<tr><td colspan="8"><div class="cashierEmptyState"><svg viewBox="0 0 72 72" aria-hidden="true"><path d="M10 23h19l6 7h27v29H10z"></path><path d="M10 23v-8h20l5 6h15"></path><path d="M27 45h18"></path></svg><b>Aucune opération crédit pour le moment.</b><span>Les dossiers, paiements et mouvements de crédit seront affichés ici.</span></div></td></tr>`;
+ return `<section class="cashierDashboardFrame agentCreditDashboard">
+  <div class="cashierPageHeading"><div><h1>Tableau de bord Agent crédit</h1><p>Suivi professionnel des dossiers, échéanciers et remboursements autorisés.</p></div><span class="cashierSecureBadge">● Session crédit sécurisée</span></div>
+  <div class="cashierInfoBanner"><span class="shieldIcon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8.1 7 10 4.2-1.9 7-5.5 7-10V6z"></path><path d="m9 12 2 2 4-5"></path></svg></span><span>Espace Agent crédit activé — seules les fonctions de crédit autorisées sont contrôlées par le serveur.</span></div>
+  <div class="cashierStatsGrid">
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"></path><path d="M15 3v5h5M8 13h8M8 17h6"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Dossiers crédit</div><div class="cashierStatValue">${credits.length}</div><div class="cashierStatSub">comptes crédit</div></div></article>
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16V8M10 16V5M14 16v-6M18 16V7"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Capital accordé</div><div class="cashierStatValue">${money(capital)}</div><div class="cashierStatSub">montant financé</div></div></article>
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"></path><path d="M4 11h16M8 15h4"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Paiements enregistrés</div><div class="cashierStatValue">${payments.length}</div><div class="cashierStatSub">remboursements</div></div></article>
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Reste à rembourser</div><div class="cashierStatValue">${money(remaining)}</div><div class="cashierStatSub">encours estimé</div></div></article>
+  </div>
+  <section class="cashierOperationsPanel"><div class="cashierOperationsTitle"><h2>Dernières opérations crédit</h2><span>${latest.length} opération(s)</span></div><div class="cashierTableWrap"><table class="cashierDashboardTable"><thead><tr><th>N° Opération</th><th>Date</th><th>Client</th><th>Compte crédit</th><th>Type</th><th>Description</th><th>Montant</th><th>Solde après</th></tr></thead><tbody>${tableRows||empty}</tbody></table></div></section>
+ </section>`
+}
 function correctionRequestsArr(){return (data&&data.operation_requests)||[]}
 function correctionStatusLabel(v){return ({pending:'En attente',approved:'Approuvée',rejected:'Refusée',executed:'Exécutée'}[String(v||'pending')]||v)}
 function correctionRequestsPage(){const items=correctionRequestsArr();const admin=currentRoleKey()==='admin_bank';const movementOptions=movesArr().map(m=>`<option value="${escapeHtml(m.id)}">${escapeHtml(movementRegisterNo(m))} — ${escapeHtml(m.type||'')} — ${money(m.amount)}</option>`).join('');const form=admin?'':`<section class="panel"><h2>Nouvelle demande</h2><div class="formgrid"><div class="field"><label>Opération concernée</label><select id="correctionMove">${movementOptions}</select></div><div class="field"><label>Type de demande</label><select id="correctionType"><option value="correction">Correction</option><option value="annulation">Annulation</option><option value="verification">Vérification</option><option value="reimpression exceptionnelle">Réimpression exceptionnelle</option></select></div><div class="field"><label>Motif détaillé</label><textarea id="correctionReason" rows="4"></textarea></div><button class="btn" onclick="submitCorrectionRequest()">Soumettre la demande</button></div></section>`;const rows=items.map(r=>`<tr><td>${escapeHtml(r.movement_id||'')}</td><td>${escapeHtml(r.requested_by_name||'')}</td><td>${escapeHtml(r.requested_by_role||'')}</td><td>${escapeHtml(r.request_type||'')}</td><td>${escapeHtml(r.reason||'')}</td><td><span class="badge ${r.status==='approved'||r.status==='executed'?'green':r.status==='rejected'?'red':'gold'}">${escapeHtml(correctionStatusLabel(r.status))}</span></td><td>${admin&&r.status==='pending'?`<button class="mini" onclick="reviewCorrectionRequest('${r.id}','approved')">Approuver</button> <button class="mini danger" onclick="reviewCorrectionRequest('${r.id}','rejected')">Refuser</button>`:'—'}</td></tr>`).join('')||'<tr><td colspan="7">Aucune demande</td></tr>';return welcome()+roleIntro()+form+`<section class="panel"><div class="panelTitle"><h2>${admin?'Demandes reçues':'Historique de mes demandes'}</h2><span class="badge gold">${items.length}</span></div><div class="tablewrap"><table><tr><th>Mouvement</th><th>Demandeur</th><th>Rôle</th><th>Type</th><th>Motif</th><th>Statut</th><th>Décision</th></tr>${rows}</table></div></section>`}
 async function submitCorrectionRequest(){try{const movement_id=$('correctionMove')&&$('correctionMove').value;const request_type=$('correctionType')&&$('correctionType').value;const reason=String(($('correctionReason')&&$('correctionReason').value)||'').trim();if(!movement_id||reason.length<5)return toast('Choisissez une opération et indiquez un motif détaillé.');await api('/correction-requests',{movement_id,request_type,reason});await refresh();render();toast('Demande transmise à l’Administrateur banque.')}catch(e){toast(e.message)}}
 async function reviewCorrectionRequest(id,status){try{const review_note=prompt('Note de décision (facultative)','')||'';await api('/correction-requests/review',{id,status,review_note});await refresh();render();toast('Demande traitée.')}catch(e){toast(e.message)}}
-function auditDashboard(){let s=stats();return welcome()+roleIntro()+`<section class="stats"><div class="card"><h3>Clients</h3><div class="value">${s.clients}</div></div><div class="card"><h3>Comptes</h3><div class="value">${s.accounts}</div></div><div class="card"><h3>Mouvements consultables</h3><div class="value">${movesArr().length}</div></div><div class="card"><h3>Accès</h3><div class="value">Lecture</div></div></section>`}
+function auditDashboard(){
+ const summary=stats();
+ const creditCount=accountsArr().filter(a=>isCreditTypeName(a.type)).length;
+ const toTime=v=>{const d=new Date(String(v||'').replace(' ','T'));return Number.isFinite(d.getTime())?d.getTime():0};
+ const latest=movesArr().slice().sort((a,b)=>toTime(b.created_at)-toTime(a.created_at)).slice(0,20);
+ const tableRows=latest.map(m=>{
+  const account=accountsArr().find(a=>String(a.id)===String(m.account_id||m.accountId||''))||{};
+  const d=new Date(String(m.created_at||'').replace(' ','T'));
+  const dateLabel=Number.isFinite(d.getTime())?d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):escapeHtml(m.created_at||'—');
+  return `<tr><td><b>AU-${escapeHtml(movementRegisterNo(m))}</b></td><td>${dateLabel}</td><td>${escapeHtml(clientName(account.client_id))}</td><td><b>${escapeHtml(account.number||'—')}</b></td><td><span class="cashierMoveType">${escapeHtml(m.type||'—')}</span></td><td>${escapeHtml(m.description||'—')}</td><td class="amountCell">${money(Math.abs(Number(m.amount||0)))}</td><td class="balanceCell">${money(officialMovementBalanceAfter(m,account))}</td></tr>`;
+ }).join('');
+ const empty=`<tr><td colspan="8"><div class="cashierEmptyState"><svg viewBox="0 0 72 72" aria-hidden="true"><path d="M10 23h19l6 7h27v29H10z"></path><path d="M10 23v-8h20l5 6h15"></path><path d="M27 45h18"></path></svg><b>Aucune donnée consultable pour le moment.</b><span>Les opérations autorisées en lecture seront affichées ici.</span></div></td></tr>`;
+ return `<section class="cashierDashboardFrame auditorDashboard">
+  <div class="cashierPageHeading"><div><h1>Tableau de bord Auditeur</h1><p>Consultation sécurisée des données bancaires autorisées.</p></div><span class="cashierSecureBadge">● Mode lecture seule</span></div>
+  <div class="cashierInfoBanner"><span class="shieldIcon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8.1 7 10 4.2-1.9 7-5.5 7-10V6z"></path><path d="m9 12 2 2 4-5"></path></svg></span><span>Espace Auditeur activé — consultation et impression uniquement, sans aucune action d’écriture.</span></div>
+  <div class="cashierStatsGrid">
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 20c.5-4 2.3-6 5.5-6s5 2 5.5 6"></path><circle cx="17" cy="9" r="2.5"></circle></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Clients consultables</div><div class="cashierStatValue">${summary.clients}</div><div class="cashierStatSub">fiches autorisées</div></div></article>
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M3 10h18M7 15h4"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Comptes consultables</div><div class="cashierStatValue">${summary.accounts}</div><div class="cashierStatSub">comptes autorisés</div></div></article>
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"></path><path d="m18 7-3 3M6 17l3-3"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Mouvements</div><div class="cashierStatValue">${movesArr().length}</div><div class="cashierStatSub">écritures consultables</div></div></article>
+   <article class="cashierStatCard"><span class="cashierStatIcon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M8 9h8M8 13h8M8 17h5"></path></svg></span><div class="cashierStatContent"><div class="cashierStatTitle">Crédits actifs</div><div class="cashierStatValue">${creditCount}</div><div class="cashierStatSub">dossiers consultables</div></div></article>
+  </div>
+  <section class="cashierOperationsPanel"><div class="cashierOperationsTitle"><h2>Dernières opérations consultables</h2><span>${latest.length} opération(s)</span></div><div class="cashierTableWrap"><table class="cashierDashboardTable"><thead><tr><th>N° Opération</th><th>Date</th><th>Client</th><th>Compte</th><th>Type</th><th>Description</th><th>Montant</th><th>Solde après</th></tr></thead><tbody>${tableRows||empty}</tbody></table></div></section>
+ </section>`
+}
 function auditClients(){const rows=clientsArr().map(c=>`<tr><td><b>${escapeHtml(c.name||'—')}</b></td><td>${escapeHtml(c.contact||'')}</td><td>${escapeHtml(c.job||'')}</td><td>${escapeHtml(c.piece||'')}</td><td><span class="badge ${Number(c.is_blocked||0)?'red':'green'}">${Number(c.is_blocked||0)?'Bloqué':'Actif'}</span></td></tr>`).join('')||'<tr><td colspan="5">Aucun client</td></tr>';return welcome()+`<section class="panel"><div class="readonlyBanner">Consultation uniquement : création, modification et suppression désactivées.</div><h2>Liste des clients</h2><div class="tablewrap"><table><tr><th>Nom</th><th>Contact</th><th>Profession</th><th>Pièce</th><th>Statut</th></tr>${rows}</table></div></section>`}
 function auditAccounts(){const rows=accountsArr().map(a=>`<tr><td><b>${escapeHtml(a.number||'—')}</b></td><td>${escapeHtml(clientName(a.client_id))}</td><td>${escapeHtml(a.type||'')}</td><td class="moneyCell"><b>${money(officialAccountBalance(a))}</b></td><td>${escapeHtml(a.status||'Actif')}</td></tr>`).join('')||'<tr><td colspan="5">Aucun compte</td></tr>';return welcome()+`<section class="panel"><div class="readonlyBanner">Consultation uniquement : les actions sensibles sont masquées.</div><h2>Liste des comptes</h2><div class="tablewrap"><table><tr><th>N° compte</th><th>Client</th><th>Type</th><th>Solde</th><th>Statut</th></tr>${rows}</table></div></section>`}
 function auditMovements(){return welcome()+`<section class="panel" id="auditMoves"><div class="readonlyBanner">Historique consultable en lecture seule.</div><div class="panelTitle"><h2>Historique des mouvements</h2><button class="mini" onclick="printSection('auditMoves')">Imprimer</button></div>${oldMoveTable(movesArr().slice(0,300))}</section>`}

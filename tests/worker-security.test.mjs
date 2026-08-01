@@ -80,7 +80,7 @@ const bank1Login='bank-one@example.invalid', bank1Pass='BankOne9!';
 r=await call('/api/register',{method:'POST',body:{name:'Bank One',manager:'Manager One',contact:'0101010101',address:'Diabo',login:bank1Login,pass:bank1Pass}});assert.equal(r.res.status,200,r.text);const bank1Id=r.json.id;
 const bank2Login='bank-two@example.invalid', bank2Pass='BankTwo9!';
 r=await call('/api/register',{method:'POST',body:{name:'Bank Two',manager:'Manager Two',contact:'0202020202',address:'Bouaké',login:bank2Login,pass:bank2Pass}});assert.equal(r.res.status,200,r.text);const bank2Id=r.json.id;
-const storedBank=env.DB.prepare('SELECT pass,auth_version FROM banks WHERE id=?').bind(bank1Id).first();assert.match(storedBank.pass,/^pbkdf2_sha256\$/);assert.equal(storedBank.auth_version,1);
+const storedBank=env.DB.prepare('SELECT pass,auth_version FROM banks WHERE id=?').bind(bank1Id).first();assert.match(storedBank.pass,/^pbkdf2_sha256\$100000\$/);assert.equal(storedBank.auth_version,1);
 
 // Two independent admin sessions for bank 1.
 r=await call('/api/login',{method:'POST',body:{login:bank1Login,pass:bank1Pass}});assert.equal(r.res.status,200,r.text);let bankCookie1=r.cookie;
@@ -101,7 +101,7 @@ r=await call('/api/save',{method:'POST',cookie:bankCookie1,body:{management_sett
 // Create an agent and verify password hashing.
 const agentLogin='agent-one@example.invalid',agentPass='AgentOne9!';
 r=await call('/api/user',{method:'POST',cookie:bankCookie1,body:{name:'Agent One',login:agentLogin,pass:agentPass,role:'Agent caisse',status:'Actif'}});assert.equal(r.res.status,200,r.text);
-const agent=env.DB.prepare('SELECT id,pass,auth_version,bank_id FROM users WHERE login=?').bind(agentLogin).first();assert.equal(agent.bank_id,bank1Id);assert.match(agent.pass,/^pbkdf2_sha256\$/);
+const agent=env.DB.prepare('SELECT id,pass,auth_version,bank_id FROM users WHERE login=?').bind(agentLogin).first();assert.equal(agent.bank_id,bank1Id);assert.match(agent.pass,/^pbkdf2_sha256\$100000\$/);
 r=await call('/api/login',{method:'POST',body:{login:agentLogin,pass:agentPass}});assert.equal(r.res.status,200,r.text);const agentCookie=r.cookie;
 r=await call('/api/save',{method:'POST',cookie:agentCookie,body:{management_settings:{year:2026,month:8,status:'open'}}});assert.equal(r.res.status,403);
 

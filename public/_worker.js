@@ -1,5 +1,7 @@
 const SESSION_TTL = 60 * 60 * 12;
-const PASSWORD_ITERATIONS = 210000;
+const PASSWORD_ITERATIONS = 100000;
+const MIN_PASSWORD_ITERATIONS = 100000;
+const MAX_PASSWORD_ITERATIONS = 100000;
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 const LOGIN_BLOCK_SECONDS = 15 * 60;
 const LOGIN_ACCOUNT_LIMIT = 5;
@@ -277,7 +279,7 @@ async function verifyPassword(password,stored){
  const parts=raw.split('$');
  if(parts.length===4&&parts[0]==='pbkdf2_sha256'){
   const iterations=Number(parts[1]);
-  if(!Number.isInteger(iterations)||iterations<100000||iterations>1000000)return {ok:false,needsUpgrade:false};
+  if(!Number.isInteger(iterations)||iterations<MIN_PASSWORD_ITERATIONS||iterations>MAX_PASSWORD_ITERATIONS)return {ok:false,needsUpgrade:false};
   try{
    const actual=await derivePassword(password,b64ToBytes(parts[2]),iterations);
    const expected=b64ToBytes(parts[3]);

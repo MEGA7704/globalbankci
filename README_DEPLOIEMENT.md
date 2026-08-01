@@ -112,3 +112,18 @@ Toutes les sessions Super Admin créées avec l’ancienne version seront invali
 - aucun stockage complet des données sensibles dans `localStorage` ;
 - aucune authentification par jeton Bearer côté navigateur ;
 - invalidation des sessions après changement de mot de passe.
+
+
+## Compatibilité PBKDF2 Cloudflare
+
+Le Worker utilise **PBKDF2-SHA-256 avec 100 000 itérations**, un sel aléatoire de 16 octets et une sortie de 256 bits. Cette valeur respecte la limite observée dans l’environnement Cloudflare utilisé par le projet.
+
+Format enregistré dans D1 :
+
+```text
+pbkdf2_sha256$100000$SEL_ALEATOIRE$EMPREINTE
+```
+
+L’identifiant et le mot de passe Super Admin restent des secrets Cloudflare et ne sont jamais enregistrés dans le dépôt.
+
+Si une tentative précédente avec une valeur supérieure à la limite Cloudflare itérations a échoué avant l’inscription, aucune ligne de compte n’a été créée, car le hash est calculé avant l’écriture dans D1.

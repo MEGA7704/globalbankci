@@ -214,7 +214,7 @@ Consultez `RBAC_V9.md` pour la matrice et les principes de sécurité.
 La V10 ajoute une présentation bancaire professionnelle spécifique au rôle `agent_caisse` : navigation vert foncé et dorée, cartes quotidiennes, dernières opérations, état vide et responsive mobile/tablette. Les autorisations RBAC de la V9 restent inchangées : aucun accès aux paramètres ou rapports administratifs n'est accordé à l'Agent caisse.
 
 
-## Correction V14 — Comptes crédit
+## Correction V15 — Comptes crédit
 
 - La section « Crédits » a été retirée du menu horizontal de l’Administrateur banque.
 - Depuis **Comptes**, le bouton **Rapport crédit** ouvre une page détaillée du crédit.
@@ -222,6 +222,10 @@ La V10 ajoute une présentation bancaire professionnelle spécifique au rôle `a
 - Le retour ramène à la liste des comptes, sans passer par la section Rapports.
 
 
-## Interface agents V14
+## Interface agents V15
 
-Voir `AMELIORATIONS_AGENTS_V14.md` pour les nouveaux popups caisse, la liste des crédits et les fiches détaillées en lecture seule.
+Voir `AMELIORATIONS_AGENTS_V15.md` pour les nouveaux popups caisse, la liste des crédits et les fiches détaillées en lecture seule.
+
+
+## Mouvements agents V15
+Les listes de mouvements Agent caisse et Agent crédit sont fermées et vérifiées côté Worker. Consultez `MOUVEMENTS_AGENTS_V15.md`.

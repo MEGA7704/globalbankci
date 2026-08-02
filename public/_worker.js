@@ -16,6 +16,31 @@ const SUPPORT_MESSAGE_SUBJECT_MAX_CHARS = 160;
 const SUPPORT_MESSAGE_BODY_MAX_CHARS = 5000;
 const SUPPORT_MESSAGE_RECIPIENT_MAX = 200;
 
+// V15 — listes serveur fermées. Les libellés reçus du navigateur sont
+// normalisés puis comparés à ces listes avant toute écriture D1.
+const CASHIER_MOVEMENT_TYPES = Object.freeze([
+ 'Dépôt','Retrait','Frais dépôt espèce','Frais retrait espèce',
+ 'Frais de recouvrement','Frais de relevé bancaire','Frais de clôture',
+ 'Frais de gestion mensuelle','Frais de carnet'
+]);
+const CREDIT_AGENT_MOVEMENT_TYPES = Object.freeze([
+ 'Approvisionnement','Paiement de crédit','Frais de pénalité de retard',
+ 'Frais de carnet crédit'
+]);
+function movementTypeCanonicalKey(type){
+ let key=norm(type);
+ const aliases={
+  'paiement credit':'paiement de credit',
+  'paiement de crédit':'paiement de credit',
+  'frais depot especes':'frais depot espece',
+  'frais retrait especes':'frais retrait espece',
+  'frais carnet':'frais de carnet',
+  'frais de penalites de retard':'frais de penalite de retard'
+ };
+ return aliases[key]||key;
+}
+function movementTypeInList(type,list){const key=movementTypeCanonicalKey(type);return list.some(item=>movementTypeCanonicalKey(item)===key);}
+
 const DEFAULT_CHARGE_BASES_BANK_MANAGER = [
  ['Frais Compte courant','Frais',0],['Frais Compte épargne','Frais',0],['Frais Compte entreprise','Frais',0],['Frais Compte association','Frais',0],['Frais Dépôt à terme','Frais',0],['Frais Compte crédit','Frais',0],['Frais Dépôt espèces','Frais',0],['Frais Retrait espèces','Frais',0],['Frais de recouvrement','Frais',0],['Frais de relevé bancaire','Frais',0],['Frais de clôture','Frais',0],['Frais de gestion mensuelle','Frais',0],['Frais Carnet','Frais',0]
 ];
@@ -494,13 +519,13 @@ function canonicalRole(v){const n=norm(v);if(n.includes('super'))return 'super_a
 function roleLabel(v){const k=canonicalRole(v);return {super_admin:'Super Admin',admin_bank:'Administrateur banque',agent_caisse:'Agent caisse',agent_credit:'Agent crédit',auditeur:'Agent consultation / auditeur'}[k]||'Agent consultation / auditeur';}
 const ROLE_PERMISSIONS=Object.freeze({
  admin_bank:['clients.read','clients.create','clients.update','clients.block','clients.unblock','clients.delete','clients.restore','accounts.read','accounts.create','accounts.update','accounts.block','accounts.unblock','accounts.close','accounts.delete','accounts.restore','moves.read.all','moves.create.all','moves.correct','credits.manage','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credits.penalties.apply','credit_movements.read','credit_documents.print','credit_reports.read.limited','users.manage.agents','reports.read.all','settings.manage','security.read','exercises.manage','messages.manage','correction.request','correction.review','receipts.print','documents.print','profile.read.own'],
- agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.read.own','receipts.print','correction.request','profile.read.own'],
- agent_credit:['clients.read','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credit_movements.read','credit_documents.print','credit_reports.read.limited','correction.request','profile.read.own'],
+ agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.create.cashier_fees','moves.read.own','receipts.print','correction.request','profile.read.own'],
+ agent_credit:['clients.read','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','moves.create.approvisionnement','credit_payments.create','credits.penalties.apply','moves.create.credit_carnet','credit_movements.read','credit_documents.print','credit_reports.read.limited','correction.request','profile.read.own'],
  auditeur:['clients.read','accounts.read','moves.read','credits.read','reports.read.limited','documents.print','correction.request','profile.read.own']
 });
 const ROLE_EXTRA_PERMISSIONS=Object.freeze({
- agent_caisse:['clients.create','clients.update.basic','moves.create.allowed_fees'],
- agent_credit:['clients.create','clients.update.basic','credits.penalties.apply'],
+ agent_caisse:['clients.create','clients.update.basic'],
+ agent_credit:['clients.create','clients.update.basic'],
  auditeur:[]
 });
 function parsePermissionPolicy(v){
@@ -528,7 +553,17 @@ async function addSecurityLog(env,bankId,ctx,action,section,result='autorisé',m
 }
 function sessionRoleKey(s){if(!s)return '';if(s.role==='super')return 'super_admin';return canonicalRole(s.userRole||'');}
 async function denyRole(env,bankId,s,action,section,motif,permission='',route=''){await addSecurityLog(env,bankId,s,action,section,'refusé',motif,{permission,route});return json({error:'Accès refusé. Permission requise : '+(permission||'autorisation serveur')+'.'},403);}
-function movePermissionForType(type){const t=norm(type);if(t==='depot'||t==='dépôt')return 'moves.create.deposit';if(t==='retrait')return 'moves.create.withdrawal';if(t.includes('paiement credit')||t.includes('paiement de credit')||t.includes('remboursement credit'))return 'credit_payments.create';if(t.includes('penalite')||t.includes('pénalité'))return 'credits.penalties.apply';if(t.includes('frais')&&(t.includes('depot')||t.includes('retrait')||t.includes('operation')))return 'moves.create.allowed_fees';return 'moves.create.all';}
+function movePermissionForType(type){
+ const t=norm(type);
+ if(t==='depot')return 'moves.create.deposit';
+ if(t==='retrait')return 'moves.create.withdrawal';
+ if(t==='approvisionnement')return 'moves.create.approvisionnement';
+ if(t==='paiement credit'||t==='paiement de credit'||t.includes('remboursement credit'))return 'credit_payments.create';
+ if(t==='frais de penalite de retard'||t==='frais de penalites de retard'||t.includes('penalite de retard'))return 'credits.penalties.apply';
+ if(t==='frais de carnet credit')return 'moves.create.credit_carnet';
+ if(movementTypeInList(type,CASHIER_MOVEMENT_TYPES))return 'moves.create.cashier_fees';
+ return 'moves.create.all';
+}
 async function permissionForRequest(path,request){
  const method=request.method.toUpperCase();
  if(path==='/api/logout'||path==='/api/security/log')return null;
@@ -632,13 +667,13 @@ async function bankPayload(env,bankId,session={}){
  if(rk==='admin_bank')return {bank,user,clients:activeClients,deleted_clients:allClients.filter(c=>Number(c.is_deleted||0)===1),accounts:activeAccounts,deleted_accounts:allAccounts.filter(a=>Number(a.is_deleted||0)===1),moves:allMoves,voided_moves:voidedQ.results||[],users:usersQ.results||[],logs:logsQ.results||[],charge_bases:chargeQ.results||[],obligations:obligationsQ.results||[],reset_requests:resetQ.results||[],account_types:accountTypesQ.results||[],movement_types:movementTypesQ.results||[],manual_revenues:manualQ.results||[],ignored_revenues:ignoredQ.results||[],security_logs:securityQ.results||[],operation_requests:requestQ.results||[],management_settings};
  if(rk==='agent_caisse'){
   const accounts=activeAccounts.filter(a=>!isCompanyAccountRow(a,bankId)&&!isCreditAccountType(a.type));const ids=new Set(accounts.map(a=>String(a.id)));const ownMoves=allMoves.filter(m=>String(m.created_by||'')===uidValue&&ids.has(String(m.account_id||'')));
-  return {bank:limitedBank,user,clients:activeClients,accounts,moves:ownMoves,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>['depot','dépôt','retrait'].includes(norm(t.name))||norm(t.name).includes('frais')),management_settings};
+  return {bank:limitedBank,user,clients:activeClients,accounts,moves:ownMoves,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>movementTypeInList(t.name,CASHIER_MOVEMENT_TYPES)),management_settings};
  }
  if(rk==='agent_credit'){
   const accounts=activeAccounts.filter(a=>isCreditAccountType(a.type));const ids=new Set(accounts.map(a=>String(a.id)));const moves=allMoves.filter(m=>ids.has(String(m.account_id||'')));
   const sourceAccount=allAccounts.find(a=>isCompanyAccountRow(a,bankId));const credit_sources=sourceAccount?allMoves.filter(m=>String(m.account_id||'')===String(sourceAccount.id)&&isCompanyApprovisionnementType(m.type)).map(m=>({id:m.id,account_id:m.account_id,type:m.type,description:m.description,amount:m.amount,balance_after:m.balance_after,created_at:m.created_at})):[];
   const credit_source_account=sourceAccount?{id:sourceAccount.id,client_id:sourceAccount.client_id,number:sourceAccount.number,type:sourceAccount.type,status:sourceAccount.status,is_blocked:sourceAccount.is_blocked}:null;
-  return {bank:limitedBank,user,clients:activeClients,accounts,moves,credit_sources,credit_source_account,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>norm(t.name).includes('credit')||norm(t.name).includes('recouvrement')||norm(t.name).includes('penalite')),management_settings};
+  return {bank:limitedBank,user,clients:activeClients,accounts,moves,credit_sources,credit_source_account,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>movementTypeInList(t.name,CREDIT_AGENT_MOVEMENT_TYPES)),management_settings};
  }
  const auditAccounts=activeAccounts.filter(a=>!isCompanyAccountRow(a,bankId));const auditIds=new Set(auditAccounts.map(a=>String(a.id)));return {bank:limitedBank,user,clients:activeClients,accounts:auditAccounts,moves:allMoves.filter(m=>auditIds.has(String(m.account_id||''))),operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:[],management_settings,report_scope:'limited'};
 }
@@ -1030,9 +1065,17 @@ async function handleApi(request,env,path){
    if(cli&&Number(cli.is_blocked||0))return json({error:'Client bloqué : mouvement impossible.'},403);
    const type=m.type||'Dépôt';
    const tnorm=norm(type);
+   const actorRole=sessionRoleKey(s);
+   // Les agents ne peuvent jamais élargir leur liste en envoyant un libellé forgé.
+   if(actorRole==='agent_caisse'&&!movementTypeInList(type,CASHIER_MOVEMENT_TYPES))return json({error:'Type de mouvement non autorisé pour l’Agent caisse.'},403);
+   if(actorRole==='agent_credit'&&!movementTypeInList(type,CREDIT_AGENT_MOVEMENT_TYPES))return json({error:'Type de mouvement non autorisé pour l’Agent crédit.'},403);
+   // Les frais sont des types de mouvement à part entière : aucun frais libre parallèle.
+   if(actorRole==='agent_caisse'||actorRole==='agent_credit')operationFee=0;
    const isCompanyAccount=isCompanyAccountRow(acc,bankId);
    if(isCompanyAccount){
-    if(!['super_admin','admin_bank'].includes(sessionRoleKey(s)))return json({error:'La gestion du Compte entreprise automatique est réservée uniquement à l’Administrateur.'},403);
+    if(actorRole==='agent_credit'){
+     if(!isCompanyApprovisionnementType(type))return json({error:'L’Agent crédit peut uniquement enregistrer un Approvisionnement sur le Compte entreprise automatique.'},403);
+    }else if(!['super_admin','admin_bank'].includes(actorRole))return json({error:'La gestion du Compte entreprise automatique est réservée à l’Administrateur, sauf Approvisionnement autorisé à l’Agent crédit.'},403);
     if(!isCompanyMovementType(type))return json({error:'Ce compte entreprise accepte uniquement les mouvements Approvisionnement et Décaissement.'},403);
     // Compte entreprise automatique :
     // - Approvisionnement augmente le solde du compte entreprise et sera repris comme revenu banque dans les rapports.
@@ -1044,24 +1087,29 @@ async function handleApi(request,env,path){
     return json({error:'Les mouvements Approvisionnement et Décaissement sont réservés uniquement au Compte entreprise automatique.'},403);
    }
    const isCredit=norm(acc.type).includes('credit');
-   const allowedCreditTypes=['paiement credit','paiement de credit','frais de recouvrement','frais de penalites de retard'];
+   if(actorRole==='agent_caisse'&&(isCompanyAccount||isCredit))return json({error:'L’Agent caisse peut intervenir uniquement sur les comptes clients ordinaires.'},403);
+   if(actorRole==='agent_credit'&&!isCompanyAccount&&!isCredit)return json({error:'L’Agent crédit peut intervenir uniquement sur un compte crédit, ou approvisionner le Compte entreprise automatique.'},403);
+   const allowedCreditTypes=['paiement credit','paiement de credit','frais de penalite de retard','frais de penalites de retard','frais de carnet credit'];
    if(isCredit && !isCompanyAccount && !allowedCreditTypes.includes(tnorm)){
     await addSecurityLog(env,bankId,s,'Mouvement refusé','Mouvements','refusé','opération incompatible');
     return json({error:'opération incompatible'},403);
    }
    const isPaymentCredit=(tnorm==='paiement credit'||tnorm==='paiement de credit');
    const isRecoveryFee=(tnorm==='frais de recouvrement');
-   const isPenalty=(tnorm==='frais de penalites de retard');
+   const isPenalty=(tnorm==='frais de penalite de retard'||tnorm==='frais de penalites de retard');
+   const isCreditCarnetFee=(tnorm==='frais de carnet credit');
    const isOperationFeeType=(tnorm.startsWith('frais')&&tnorm.includes('operation'));
    if(isCredit && isPenalty){
     const rate=Number(acc.credit_penalty_rate||0)||0;
     amount=Math.round((creditCurrentInstallmentBase(acc)*rate/100)*100)/100;
    }
    if(amount<=0)return json({error:'Montant invalide.'},400);
-   const isClientFee=tnorm.startsWith('frais') && !isPenalty && !isRecoveryFee;
+   const isAnyFee=tnorm.startsWith('frais');
    const companyDecaissementOnly=isCompanyAccount&&isCompanyDecaissementType(type);
-   const debit=(tnorm==='retrait'||tnorm==='decaissement'||isPaymentCredit||isClientFee);
-   const increaseDebt=(isCredit&&(isRecoveryFee||isPenalty));
+   // Sur un compte ordinaire, tous les frais autorisés diminuent le solde client.
+   // Sur un compte crédit, pénalité et carnet crédit augmentent la dette ; le paiement la diminue.
+   const debit=(tnorm==='retrait'||tnorm==='decaissement'||isPaymentCredit||(!isCredit&&isAnyFee));
+   const increaseDebt=(isCredit&&(isRecoveryFee||isPenalty||isCreditCarnetFee));
    let companyAvailable=null;
    if(isCompanyAccount){
     companyAvailable=await computeCompanyOfficialBalance(env,bankId,{});
@@ -1072,7 +1120,7 @@ async function handleApi(request,env,path){
    }
    if(!isCompanyAccount&&debit&&Number(acc.balance)<amount)return json({error:'Solde insuffisant.'},400);
    let newBal=isCompanyAccount?Math.round((Number(companyAvailable||0)+(companyDecaissementOnly?-amount:amount))*100)/100:Number(acc.balance)+(debit?-amount:(increaseDebt?amount:amount));
-   const desc=m.description||(companyDecaissementOnly?'Décaissement du compte entreprise automatique — revenu négatif dans le rapport':(isPenalty?('Pénalité de retard automatique ('+(Number(acc.credit_penalty_rate||0)||0)+'% de l’échéance en cours)'):(isRecoveryFee?'Frais de recouvrement':type)));
+   const desc=m.description||(companyDecaissementOnly?'Décaissement du compte entreprise automatique — revenu négatif dans le rapport':(isPenalty?('Pénalité de retard automatique ('+(Number(acc.credit_penalty_rate||0)||0)+'% de l’échéance en cours)'):(isCreditCarnetFee?'Frais de carnet crédit':(isRecoveryFee?'Frais de recouvrement':type))));
    let finalBal=newBal;
    const moveId=uid('MOV');
    const statements=[

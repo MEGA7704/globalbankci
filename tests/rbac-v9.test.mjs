@@ -36,6 +36,8 @@ r=await call('/api/login',{method:'POST',body:{login:cashierLogin,pass:cashierPa
 r=await call('/api/load',{cookie:cashierCookie});assert.equal(r.status,200,r.text);assert.equal(r.json.user.role_key,'agent_caisse');assert.ok(r.json.user.permissions.includes('moves.create.deposit'));assert.equal(r.json.users,undefined);
 r=await call('/api/move',{method:'POST',cookie:cashierCookie,body:{accountId:ordinary.id,type:'Dépôt',amount:1000,role:'admin_bank',bank_id:'OTHER'}});assert.equal(r.status,200,r.text);
 r=await call('/api/move',{method:'POST',cookie:cashierCookie,body:{accountId:ordinary.id,type:'Retrait',amount:500}});assert.equal(r.status,200,r.text);
+for(const feeType of ['Frais dépôt espèce','Frais retrait espèce','Frais de recouvrement','Frais de relevé bancaire','Frais de clôture','Frais de gestion mensuelle','Frais de carnet']){r=await call('/api/move',{method:'POST',cookie:cashierCookie,body:{accountId:ordinary.id,type:feeType,amount:100}});assert.equal(r.status,200,feeType+': '+r.text);}
+r=await call('/api/move',{method:'POST',cookie:cashierCookie,body:{accountId:ordinary.id,type:'Frais de dossier crédit',amount:100}});assert.equal(r.status,403,'cashier forged type must be denied');
 r=await call('/api/account',{method:'POST',cookie:cashierCookie,body:{clientId:client.id,type:'Compte crédit',creditAmount:1000,creditDuration:2}});assert.equal(r.status,403);
 r=await call('/api/settings/account-type',{method:'POST',cookie:cashierCookie,body:{name:'Interdit'}});assert.equal(r.status,403);
 r=await call('/api/user',{method:'POST',cookie:cashierCookie,body:{name:'Pirate',login:'pirate@example.invalid',pass:'PirateTest9!',role:'Agent caisse'}});assert.equal(r.status,403);
@@ -61,10 +63,15 @@ const source=env.DB.prepare("SELECT id FROM moves WHERE bank_id=? AND account_id
 const creditLogin='credit@example.invalid',creditPass='CreditAgent9!';
 r=await call('/api/user',{method:'POST',cookie:adminCookie,body:{name:'Crédit Test',login:creditLogin,pass:creditPass,role:'Agent crédit',permissions:{allow:[],deny:[]}}});assert.equal(r.status,200,r.text);
 r=await call('/api/login',{method:'POST',body:{login:creditLogin,pass:creditPass}});assert.equal(r.status,200,r.text);const creditCookie=r.cookie;
+r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:company.id,type:'Approvisionnement',amount:50000,description:'Approvisionnement Agent crédit V15'}});assert.equal(r.status,200,r.text);
+const agentCreditSource=env.DB.prepare("SELECT id FROM moves WHERE bank_id=? AND account_id=? AND type='Approvisionnement' AND created_by<>'' ORDER BY rowid DESC LIMIT 1").bind(bankId,company.id).first();assert.ok(agentCreditSource?.id);
 r=await call('/api/load',{cookie:creditCookie});assert.equal(r.status,200,r.text);assert.equal(r.json.user.role_key,'agent_credit');assert.ok(Array.isArray(r.json.credit_sources)&&r.json.credit_sources.length>0);
-r=await call('/api/account',{method:'POST',cookie:creditCookie,body:{clientId:client.id,type:'Compte crédit',creditChoice:'Crédit test',creditSourceApprovisionnementId:source.id,creditAmount:10000,creditRate:10,creditDuration:2,fee:0}});assert.equal(r.status,200,r.text);
+r=await call('/api/account',{method:'POST',cookie:creditCookie,body:{clientId:client.id,type:'Compte crédit',creditChoice:'Crédit test',creditSourceApprovisionnementId:agentCreditSource.id,creditAmount:10000,creditRate:10,creditDuration:2,creditPenalty:2,fee:0}});assert.equal(r.status,200,r.text);
 const creditAccount=env.DB.prepare("SELECT id FROM accounts WHERE bank_id=? AND client_id=? AND type='Compte crédit' ORDER BY created_at DESC LIMIT 1").bind(bankId,client.id).first();
 r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:creditAccount.id,type:'paiement credit',amount:1000}});assert.equal(r.status,200,r.text);
+r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:creditAccount.id,type:'Frais de pénalité de retard',amount:1}});assert.equal(r.status,200,r.text);
+r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:creditAccount.id,type:'Frais de carnet crédit',amount:250}});assert.equal(r.status,200,r.text);
+r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:creditAccount.id,type:'Frais de recouvrement',amount:100}});assert.equal(r.status,403,'credit agent forged recovery fee must be denied');
 r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:ordinary.id,type:'Retrait',amount:100,role:'admin_bank'}});assert.equal(r.status,403);
 r=await call('/api/account',{method:'POST',cookie:creditCookie,body:{clientId:client.id,type:'Compte courant',deposit:100}});assert.equal(r.status,403);
 

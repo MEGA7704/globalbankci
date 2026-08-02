@@ -1561,11 +1561,11 @@ function menuLabelForRole(key){const isAgent=['agent_caisse','agent_credit','aud
 
 const ROLE_DEFAULT_PERMISSIONS={
  admin_bank:['ALL'],
- agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.read.own','receipts.print','correction.request','profile.read.own'],
- agent_credit:['clients.read','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credit_movements.read','credit_documents.print','credit_reports.read.limited','correction.request','profile.read.own'],
+ agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.create.cashier_fees','moves.read.own','receipts.print','correction.request','profile.read.own'],
+ agent_credit:['clients.read','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','moves.create.approvisionnement','credit_payments.create','credits.penalties.apply','moves.create.credit_carnet','credit_movements.read','credit_documents.print','credit_reports.read.limited','correction.request','profile.read.own'],
  auditeur:['clients.read','accounts.read','moves.read','credits.read','reports.read.limited','documents.print','correction.request','profile.read.own']
 };
-const ROLE_OPTIONAL_PERMISSIONS={agent_caisse:['clients.create','clients.update.basic','moves.create.allowed_fees'],agent_credit:['clients.create','clients.update.basic','credits.penalties.apply'],auditeur:[]};
+const ROLE_OPTIONAL_PERMISSIONS={agent_caisse:['clients.create','clients.update.basic'],agent_credit:['clients.create','clients.update.basic'],auditeur:[]};
 const AGENT_ACTIVITY_OPTIONS=[];
 function normalizeRoleText(v){let n=String(v||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');if(n.includes('super'))return 'super_admin';if(n.includes('administrateur')||n.includes('admin'))return 'admin_bank';if(n.includes('caisse')||n.includes('caissier'))return 'agent_caisse';if(n.includes('credit'))return 'agent_credit';if(n.includes('audit')||n.includes('consult'))return 'auditeur';return role==='super'?'super_admin':'auditeur'}
 function currentRoleKey(){return role==='super'?'super_admin':normalizeRoleText((data&&data.user&&(data.user.role_key||data.user.role))||'Administrateur banque')}
@@ -1582,7 +1582,7 @@ function canCreateAccount(type=''){return isBankUser() && (isCreditTypeName(type
 const PERMISSION_LABELS={
  'clients.read':'Consulter les clients','clients.create':'Créer un client','clients.update':'Modifier les clients','clients.update.basic':'Modifier les informations de base','clients.block':'Bloquer un client','clients.unblock':'Débloquer un client','clients.delete':'Archiver un client','clients.restore':'Restaurer un client',
  'accounts.read':'Consulter les comptes','accounts.create':'Créer un compte','accounts.update':'Modifier un compte','accounts.block':'Bloquer un compte','accounts.unblock':'Débloquer un compte','accounts.close':'Clôturer un compte','accounts.delete':'Archiver un compte','accounts.restore':'Restaurer un compte',
- 'moves.read':'Consulter les mouvements','moves.read.own':'Consulter ses opérations','moves.read.all':'Consulter tous les mouvements','moves.create.deposit':'Enregistrer un dépôt','moves.create.withdrawal':'Enregistrer un retrait','moves.create.allowed_fees':'Enregistrer les frais autorisés','moves.create.all':'Créer tous les mouvements','moves.correct':'Corriger ou annuler un mouvement',
+ 'moves.read':'Consulter les mouvements','moves.read.own':'Consulter ses opérations','moves.read.all':'Consulter tous les mouvements','moves.create.deposit':'Enregistrer un dépôt','moves.create.withdrawal':'Enregistrer un retrait','moves.create.cashier_fees':'Enregistrer les frais de caisse autorisés','moves.create.approvisionnement':'Enregistrer un approvisionnement crédit','moves.create.credit_carnet':'Enregistrer les frais de carnet crédit','moves.create.allowed_fees':'Ancienne permission de frais (compatibilité)','moves.create.all':'Créer tous les mouvements','moves.correct':'Corriger ou annuler un mouvement',
  'credit_accounts.read':'Consulter les comptes crédit','credit_accounts.create':'Créer un compte crédit','credits.read':'Consulter les crédits','credits.create':'Créer un dossier crédit','credits.update.draft':'Modifier un crédit en brouillon','credits.schedule.generate':'Générer un échéancier','credit_payments.create':'Enregistrer un paiement crédit','credits.penalties.apply':'Appliquer une pénalité','credit_movements.read':'Consulter les mouvements crédit','credit_documents.print':'Imprimer les documents crédit','credit_reports.read.limited':'Consulter les rapports crédit',
  'receipts.print':'Imprimer les reçus','documents.print':'Imprimer les documents','reports.read.limited':'Consulter les rapports autorisés','correction.request':'Soumettre une demande de correction','correction.review':'Traiter les demandes de correction','profile.read.own':'Consulter son profil'
 };
@@ -2469,7 +2469,9 @@ function officialTypeSummary(accountType,scope={}){return officialFinancialSumma
 
 function clientName(id){return (clientsArr().find(c=>c.id===id)||{}).name||'—'}
 const DEFAULT_ACCOUNT_TYPES=['Compte courant','Compte épargne','Compte entreprise','Compte association','Dépôt à terme','Compte crédit'];
-const DEFAULT_MOVEMENT_TYPES=['Dépôt','Retrait','Approvisionnement','Décaissement','paiement credit','Frais Dépôt espèces','Frais Retrait espèces','Frais de recouvrement','Frais de relevé bancaire','Frais de clôture','Frais de gestion mensuelle','Frais Carnet','Frais de Pénalités de retard'];
+const DEFAULT_MOVEMENT_TYPES=['Dépôt','Retrait','Approvisionnement','Décaissement','Paiement de crédit','Frais dépôt espèce','Frais retrait espèce','Frais de recouvrement','Frais de relevé bancaire','Frais de clôture','Frais de gestion mensuelle','Frais de carnet','Frais de pénalité de retard','Frais de carnet crédit'];
+const CASHIER_ALLOWED_MOVEMENT_TYPES_UI=['Dépôt','Retrait','Frais dépôt espèce','Frais retrait espèce','Frais de recouvrement','Frais de relevé bancaire','Frais de clôture','Frais de gestion mensuelle','Frais de carnet'];
+const CREDIT_AGENT_ALLOWED_MOVEMENT_TYPES_UI=['Approvisionnement','Paiement de crédit','Frais de pénalité de retard','Frais de carnet crédit'];
 function uniqueList(arr){let out=[];(arr||[]).forEach(v=>{v=String(v||'').trim();if(v&&!out.some(x=>normText(x)===normText(v)))out.push(v)});return out}
 function activeTypeRows(rows){return (rows||[]).filter(x=>Number(x.is_active??1)!==0)}
 function compactTypeKey(name){return normText(name).replace(/\b(de|des|du|d|a|au|aux|la|le|les|l)\b/g,' ').split(/\s+/).filter(Boolean).map(w=>w.replace(/s$/,'')).join('')}
@@ -2573,7 +2575,7 @@ function roleMovementsPage(){return currentRoleKey()==='admin_bank'?mouvements()
 function ownOperationsPage(){
  const own=String((data&&data.user&&data.user.id)||'');
  const rows=movesArr().filter(m=>!own||String(m.created_by||'')===own);
- const cashierAction=currentRoleKey()==='agent_caisse'&&hasAnyPerm(['moves.create.deposit','moves.create.withdrawal','moves.create.allowed_fees'])?'<button class="btn dark agentPrimaryAction" onclick="return openCashierMovementModal()">+ Nouveau mouvement</button>':'';
+ const cashierAction=currentRoleKey()==='agent_caisse'&&hasAnyPerm(['moves.create.deposit','moves.create.withdrawal','moves.create.cashier_fees'])?'<button class="btn dark agentPrimaryAction" onclick="return openCashierMovementModal()">+ Nouveau mouvement</button>':'';
  return welcome()+roleIntro()+`<section class="panel agentHistoryPanel" id="ownMoves"><div class="panelTitle agentHistoryTitle"><div><h2>Historique de mes opérations</h2><p class="settingsHelp">Consultez uniquement les opérations enregistrées avec votre session.</p></div><div class="agentHistoryActions">${cashierAction}<button class="mini" onclick="printSection('ownMoves')">Imprimer</button></div></div>${oldMoveTable(rows)}</section>`;
 }
 function cashierDashboard(){
@@ -3927,9 +3929,7 @@ function cashierAllowedMovementTypes(){
  const types=[];
  if(hasPerm('moves.create.deposit'))types.push('Dépôt');
  if(hasPerm('moves.create.withdrawal'))types.push('Retrait');
- if(hasPerm('moves.create.allowed_fees')){
-  movementTypeNames().forEach(t=>{const n=normText(t);if(n.includes('frais')&&(n.includes('depot')||n.includes('retrait')||n.includes('operation')))types.push(t);});
- }
+ if(hasPerm('moves.create.cashier_fees'))types.push(...CASHIER_ALLOWED_MOVEMENT_TYPES_UI.filter(t=>!['Dépôt','Retrait'].includes(t)));
  return uniqueList(types);
 }
 function cashierMovementFormHtml(){
@@ -3937,12 +3937,11 @@ function cashierMovementFormHtml(){
  const types=cashierAllowedMovementTypes();
  if(!accounts.length)return '<div class="readonlyBanner">Aucun compte client actif n’est disponible pour une opération de caisse.</div>';
  if(!types.length)return '<div class="readonlyBanner">Aucune création de mouvement n’est autorisée par vos permissions actuelles.</div>';
- const feeField=hasPerm('moves.create.allowed_fees')?'<div class="field"><label>Frais d’opération autorisés</label><input id="movOpFee" type="number" min="0" value="0" placeholder="0 FCFA"></div>':'<input id="movOpFee" type="hidden" value="0">';
- return `<div class="cashierMovementIntro"><span>↔</span><div><b>Enregistrement sécurisé d’un mouvement caisse</b><small>Choisissez un compte client, le type autorisé et le montant. Toute correction ultérieure nécessite une demande auprès de l’Administrateur banque.</small></div></div><div class="proModalGrid cashierMovementGrid"><div class="field full"><label>Compte client</label><select id="movAcc">${accounts.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.number||'')} — ${escapeHtml(clientName(a.client_id))} — Solde ${money(officialAccountBalance(a))}</option>`).join('')}</select></div><div class="field"><label>Type de mouvement</label><select id="movType">${types.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}</select></div><div class="field"><label>Montant</label><input id="movAmount" type="number" min="1" placeholder="Montant en FCFA"></div>${feeField}<div class="field full"><label>Description</label><input id="movDesc" maxlength="240" placeholder="Motif ou référence de l’opération"></div></div>`;
+ return `<div class="cashierMovementIntro"><span>↔</span><div><b>Enregistrement sécurisé d’un mouvement caisse</b><small>Seuls les neuf types de mouvement autorisés à l’Agent caisse sont proposés et contrôlés par le serveur.</small></div></div><div class="proModalGrid cashierMovementGrid"><div class="field full"><label>Compte client</label><select id="movAcc">${accounts.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.number||'')} — ${escapeHtml(clientName(a.client_id))} — Solde ${money(officialAccountBalance(a))}</option>`).join('')}</select></div><div class="field"><label>Type de mouvement</label><select id="movType">${types.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}</select></div><div class="field"><label>Montant</label><input id="movAmount" type="number" min="1" placeholder="Montant en FCFA"></div><input id="movOpFee" type="hidden" value="0"><div class="field full"><label>Description</label><input id="movDesc" maxlength="240" placeholder="Motif ou référence de l’opération"></div></div>`;
 }
 function openCashierMovementModal(){
  if(currentRoleKey()!=='agent_caisse')return toast('Cette action est réservée à l’Agent caisse.');
- if(!hasAnyPerm(['moves.create.deposit','moves.create.withdrawal','moves.create.allowed_fees']))return toast('Aucune permission de création de mouvement caisse.');
+ if(!hasAnyPerm(['moves.create.deposit','moves.create.withdrawal','moves.create.cashier_fees']))return toast('Aucune permission de création de mouvement caisse.');
  showProModal('Nouveau mouvement',cashierMovementFormHtml(),'Enregistrer le mouvement',async()=>addMove(document.querySelector('#proModalBackdrop .proSave')));
  setTimeout(()=>{const modal=document.querySelector('#proModalBackdrop .proModal');if(modal)modal.classList.add('movementCreateProModal','cashierMovementProModal');const amount=$('movAmount');if(amount)amount.focus();},40);
  return false;
@@ -3950,15 +3949,35 @@ function openCashierMovementModal(){
 function cashierPage(){
  const ownId=currentUserId();
  const ownMoves=movesArr().filter(m=>!ownId||String(m.created_by||'')===ownId).slice(0,200);
- const canCreate=hasAnyPerm(['moves.create.deposit','moves.create.withdrawal','moves.create.allowed_fees']);
+ const canCreate=hasAnyPerm(['moves.create.deposit','moves.create.withdrawal','moves.create.cashier_fees']);
  return welcome()+roleIntro()+`<section class="panel agentHistoryPanel cashierHistoryPanel" id="cashierHistory"><div class="panelTitle agentHistoryTitle"><div><h2>Historique de mes opérations</h2><p class="settingsHelp">Les dépôts, retraits et frais autorisés sont enregistrés depuis un formulaire sécurisé.</p></div><div class="agentHistoryActions">${canCreate?'<button class="btn dark agentPrimaryAction" onclick="return openCashierMovementModal()">+ Nouveau mouvement</button>':''}<button class="mini" onclick="printSection('cashierHistory')">Imprimer</button></div></div>${oldMoveTable(ownMoves)}</section>`;
 }
 function creditAccountsForPage(){return accountsArr().filter(a=>normText(a.type).includes('credit'))}
 function creditAccountsRowsHtml(credits=creditAccountsForPage()){return credits.map(a=>`<tr class="creditClickableRow" onclick="return showCreditDetails('${a.id}')"><td><b>${escapeHtml(a.number||'')}</b></td><td>${escapeHtml(clientName(a.client_id))}</td><td>${escapeHtml(String(a.credit_choice||'—').replace(/\s*\[APPROVISIONNEMENT_SOURCE:[^\]]+\]/g,''))}</td><td class="moneyCell">${money(a.credit_amount||0)}</td><td class="moneyCell"><b>${money(officialAccountBalance(a))}</b></td><td>${a.credit_rate||0}%</td><td>${a.credit_duration||0} mois</td><td><span class="badge ${Number(officialAccountBalance(a))>0?'gold':'green'}">${Number(officialAccountBalance(a))>0?'En cours':'Soldé'}</span></td><td><div class="creditReadOnlyActions"><button class="mini" onclick="event.stopPropagation();return showCreditDetails('${a.id}')">Détail</button><button class="mini" onclick="event.stopPropagation();return printCreditDetails('${a.id}')">Imprimer</button></div></td></tr>`).join('')||'<tr><td colspan="9">Aucun compte crédit enregistré.</td></tr>'}
 function openAdminCreditListPage(){const credits=creditAccountsForPage();const body=`<div class="creditListPageHead"><div><b>Liste complète des comptes crédits</b><small>${credits.length} compte(s) enregistré(s)</small></div><button class="mini" onclick="printSection('adminCreditListPrint')">Imprimer</button></div><div id="adminCreditListPrint" class="tablewrap creditListPageTableWrap"><table class="creditListPageTable"><tr><th>N° crédit</th><th>Client</th><th>Type de crédit</th><th>Montant accordé</th><th>Solde restant</th><th>Taux</th><th>Durée</th><th>Situation</th><th>Actions</th></tr>${creditAccountsRowsHtml(credits)}</table></div>`;openModal('Liste des crédits',body,`<button class="btn dark" onclick="closeModal()">Fermer la liste</button>`);setTimeout(()=>{const modal=document.querySelector('#proModalBackdrop .proModal');if(modal)modal.classList.add('creditListFullPageModal')},30);return false}
 function openAdminCreditCreateModal(){if(!hasPerm('credit_accounts.create'))return toast('Accès refusé : création de compte crédit non autorisée.');showProModal('Nouveau compte crédit',accountCreateFormHtml(),'Créer le compte crédit',async()=>{await addAccount(document.querySelector('#proModalBackdrop .proSave'));});setTimeout(()=>{const modal=document.querySelector('#proModalBackdrop .proModal');if(modal)modal.classList.add('adminCreditCreateModal');const select=$('accType');if(select){const option=[...select.options].find(o=>isCreditTypeName(o.value));if(option)select.value=option.value;}if($('accOpenDate')&&!$('accOpenDate').value)$('accOpenDate').value=todayISO();toggleCreditFields();refreshCreditSourceSuggestions('',false)},60);return false}
+function creditAgentMovementFormHtml(){
+ const credits=creditAccountsForPage().filter(a=>Number(officialAccountBalance(a))>0);
+ const company=(data&&data.credit_source_account)||null;
+ if(!credits.length&&!company)return '<div class="readonlyBanner">Aucun compte crédit actif ni Compte entreprise automatique disponible.</div>';
+ return `<div class="creditPaymentIntro"><span>💳</span><div><b>Mouvement crédit autorisé</b><small>Choisissez uniquement l’un des quatre mouvements accordés à l’Agent crédit. Le serveur contrôle le compte cible et le rôle réel.</small></div></div><div class="proModalGrid creditPaymentGrid"><div class="field full"><label>Type de mouvement</label><select id="creditPayType" onchange="updateCreditAgentMovementFields()">${CREDIT_AGENT_ALLOWED_MOVEMENT_TYPES_UI.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}</select></div><div id="creditCompanyTargetField" class="field full"><label>Compte à approvisionner</label><input value="${escapeHtml(company?((company.number||'Compte entreprise automatique')+' — Compte entreprise automatique'):'Compte entreprise automatique indisponible')}" readonly><input id="creditCompanyAccountId" type="hidden" value="${escapeHtml(company&&company.id||'')}"></div><div id="creditAccountTargetField" class="field full hidden"><label>Compte crédit</label><select id="creditPayAcc">${credits.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.number||'')} — ${escapeHtml(clientName(a.client_id))} — Solde ${money(officialAccountBalance(a))}</option>`).join('')}</select></div><div class="field full"><label id="creditPayAmountLabel">Montant de l’approvisionnement</label><input id="creditPayAmount" type="number" min="1" placeholder="Montant en FCFA"></div><div class="field full"><label>Description</label><input id="creditPayDesc" maxlength="240" placeholder="Référence ou motif du mouvement"></div></div>`;
+}
+function updateCreditAgentMovementFields(){
+ const type=($('creditPayType')&&$('creditPayType').value)||'Approvisionnement';
+ const key=normText(type);const isSupply=key==='approvisionnement';const isPenalty=key==='frais de penalite de retard';
+ const companyField=$('creditCompanyTargetField'),creditField=$('creditAccountTargetField'),amount=$('creditPayAmount'),label=$('creditPayAmountLabel'),desc=$('creditPayDesc');
+ if(companyField)companyField.classList.toggle('hidden',!isSupply);if(creditField)creditField.classList.toggle('hidden',isSupply);
+ if(label)label.textContent=isSupply?'Montant de l’approvisionnement':isPenalty?'Montant calculé selon le taux du crédit':'Montant du mouvement';
+ if(amount){amount.readOnly=false;if(isPenalty){const acc=creditAccountsForPage().find(a=>String(a.id)===String(($('creditPayAcc')&&$('creditPayAcc').value)||''));const auto=acc?Math.round(creditCurrentInstallmentBase(acc)*(Number(acc.credit_penalty_rate||0)||0))/100:0;amount.value=auto||0;amount.readOnly=true;}else if(Number(amount.value||0)===0)amount.value='';}
+ if(desc&&!desc.value)desc.value=type;
+}
 function openAdminCreditPaymentModal(){
- if(!hasPerm('credit_payments.create'))return toast('Accès refusé : paiement crédit non autorisé.');
+ if(!hasPerm('credit_payments.create')&&currentRoleKey()!=='agent_credit')return toast('Accès refusé : paiement crédit non autorisé.');
+ if(currentRoleKey()==='agent_credit'){
+  showProModal('Nouveau mouvement crédit',creditAgentMovementFormHtml(),'Enregistrer le mouvement',payCreditFromAgent);
+  setTimeout(()=>{const modal=document.querySelector('#proModalBackdrop .proModal');if(modal)modal.classList.add('adminCreditPaymentModal','creditAgentPaymentModal');updateCreditAgentMovementFields();const select=$('creditPayAcc');if(select)select.addEventListener('change',updateCreditAgentMovementFields);},30);
+  return false;
+ }
  const credits=creditAccountsForPage().filter(a=>Number(officialAccountBalance(a))>0);
  if(!credits.length)return toast('Aucun compte crédit actif à payer.');
  const body=`<div class="creditPaymentIntro"><span>💳</span><div><b>Enregistrer un paiement crédit</b><small>Sélectionnez le compte, vérifiez le client et saisissez le montant reçu.</small></div></div><div class="proModalGrid creditPaymentGrid"><div class="field full"><label>Compte crédit</label><select id="creditPayAcc">${credits.map(a=>`<option value="${a.id}">${escapeHtml(a.number||'')} — ${escapeHtml(clientName(a.client_id))} — Solde ${money(officialAccountBalance(a))}</option>`).join('')}</select></div><div class="field full"><label>Montant du paiement</label><input id="creditPayAmount" type="number" min="1" placeholder="Montant reçu en FCFA"></div></div>`;
@@ -3994,7 +4013,7 @@ function creditAgentPage(){
  const payments=movesArr().filter(isCreditPaymentMove).slice(0,100);
  if(currentRoleKey()==='admin_bank')return welcome()+`<section class="panel adminCreditHistoryPanel"><div class="panelTitle adminCreditHistoryTitle"><div><h2>Historique des paiements crédit</h2><p class="settingsHelp">Consultez les remboursements enregistrés et accédez aux principales actions de gestion des crédits.</p></div><div class="adminCreditHeaderActions"><button class="btn white" onclick="return openAdminCreditListPage()">Liste des crédits</button><button class="btn dark" onclick="return openAdminCreditCreateModal()">+ Nouveau compte crédit</button><button class="btn" onclick="return openAdminCreditPaymentModal()">Paiement crédit</button></div></div><div class="adminCreditSummary"><span><b>${credits.length}</b> comptes crédit</span><span><b>${payments.length}</b> paiements affichés</span><span><b>${money(credits.reduce((sum,a)=>sum+Math.max(0,Number(officialAccountBalance(a))),0))}</b> reste à recouvrer</span></div>${oldMoveTable(payments)}</section>`;
  const createButton=hasPerm('credit_accounts.create')?'<button class="btn dark" onclick="return openCreditAgentCreateModal()">+ Nouveau compte crédit</button>':'';
- const paymentButton=hasPerm('credit_payments.create')?'<button class="btn" onclick="return openAdminCreditPaymentModal()">Paiement crédit</button>':'';
+ const paymentButton=hasAnyPerm(['moves.create.approvisionnement','credit_payments.create','credits.penalties.apply','moves.create.credit_carnet'])?'<button class="btn" onclick="return openAdminCreditPaymentModal()">Mouvement crédit</button>':'';
  return welcome()+roleIntro()+`<section class="panel agentCreditHistoryPanel"><div class="panelTitle creditAgentHistoryTitle"><div><h2>Historique des paiements crédit</h2><p class="settingsHelp">Suivez les paiements enregistrés et accédez aux comptes crédit autorisés.</p></div><div class="creditAgentHeaderActions"><button class="btn white" onclick="return openCreditAgentListPage()">Liste des crédits</button>${createButton}${paymentButton}<button class="mini" onclick="printSection('creditAgentPayments')">Imprimer</button></div></div><div class="adminCreditSummary"><span><b>${credits.length}</b> comptes crédit</span><span><b>${payments.length}</b> paiements affichés</span><span><b>${money(credits.reduce((sum,a)=>sum+Math.max(0,Number(officialAccountBalance(a))),0))}</b> reste à recouvrer</span></div><div id="creditAgentPayments">${oldMoveTable(payments)}</div></section>`;
 }
 async function addCreditFromAgent(){try{
@@ -4010,7 +4029,17 @@ async function addCreditFromAgent(){try{
  await api('/account',{clientId,type:'Compte crédit',creditChoice:$('creditAgentChoice').value,creditSourceApprovisionnementId:sourceId,creditSourceApprovisionnementRegister:src.ref,creditSourceApprovisionnementAvailable:src.available,fee:(Number($('creditAgentFee').value)||0)+(Number($('creditAgentCarnet').value)||0),creditCarnetFee:$('creditAgentCarnet').value,creditAmount:$('creditAgentAmount').value,creditRate:$('creditAgentRate').value,creditDuration:$('creditAgentDuration').value,creditPenalty:0});
  closeProModal();toast('Compte crédit créé');await refresh();window.creditAgentListOpen=true;render();
  }catch(e){toast(e.message)}}
-async function payCreditFromAgent(){try{const accountId=$('creditPayAcc')&&$('creditPayAcc').value;const amount=Number(($('creditPayAmount')&&$('creditPayAmount').value)||0);if(!accountId||amount<=0)return toast('Choisissez un compte crédit et saisissez un montant supérieur à zéro.');await api('/move',{accountId,type:'paiement credit',amount,description:'Paiement crédit'});closeProModal();toast('Paiement crédit enregistré');await refresh();render()}catch(e){toast(e.message)}}
+async function payCreditFromAgent(){try{
+ const isCreditAgent=currentRoleKey()==='agent_credit';
+ const type=isCreditAgent?(($('creditPayType')&&$('creditPayType').value)||'Paiement de crédit'):'Paiement de crédit';
+ const isSupply=normText(type)==='approvisionnement';
+ const accountId=isSupply?(($('creditCompanyAccountId')&&$('creditCompanyAccountId').value)||''):(($('creditPayAcc')&&$('creditPayAcc').value)||'');
+ const amount=Number(($('creditPayAmount')&&$('creditPayAmount').value)||0);
+ if(!accountId)return toast(isSupply?'Compte entreprise automatique indisponible.':'Choisissez un compte crédit.');
+ if(amount<=0)return toast('Saisissez un montant supérieur à zéro.');
+ const description=(($('creditPayDesc')&&$('creditPayDesc').value)||type).trim();
+ await api('/move',{accountId,type,amount,description});closeProModal();toast(type+' enregistré');await refresh();render();
+ }catch(e){toast(e.message)}}
 
 function chargesArr(){return data.charge_bases||[]}
 function obligationsArr(){return data.obligations||[]}

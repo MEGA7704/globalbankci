@@ -1,6 +1,6 @@
 {
   "name": "global-bank-cloudflare",
-  "version": "14.0.0",
+  "version": "15.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
     "deploy": "wrangler pages deploy public --project-name global-bank",
     "db:migrate:remote": "wrangler d1 migrations apply bankdb --remote",
     "db:migrate:local": "wrangler d1 migrations apply bankdb --local",
-    "test:security": "node tests/worker-security.test.mjs && node tests/rbac-v9.test.mjs && node tests/ui-rbac-v9.test.mjs && node tests/ui-cashier-dashboard-v10.test.mjs && node tests/ui-agent-dashboards-v11.test.mjs && node tests/ui-admin-workflows-v12.test.mjs && node tests/ui-admin-credit-report-v13.test.mjs && node tests/ui-agent-workflows-v14.test.mjs"
+    "test:security": "node tests/worker-security.test.mjs && node tests/rbac-v9.test.mjs && node tests/ui-rbac-v9.test.mjs && node tests/ui-cashier-dashboard-v10.test.mjs && node tests/ui-agent-dashboards-v11.test.mjs && node tests/ui-admin-workflows-v12.test.mjs && node tests/ui-admin-credit-report-v13.test.mjs && node tests/ui-agent-workflows-v14.test.mjs && node tests/movement-permissions-v15.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.114.0"

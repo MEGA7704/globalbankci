@@ -1576,6 +1576,7 @@ function defaultPermissionsForRoleKey(k){return [...(ROLE_DEFAULT_PERMISSIONS[k]
 function currentUserPermissions(){const k=currentRoleKey();if(k==='super_admin'||k==='admin_bank')return ['ALL'];const server=(data&&data.user&&Array.isArray(data.user.permissions))?data.user.permissions:[];return server.length?server:defaultPermissionsForRoleKey(k)}
 function userPermissions(u){const k=normalizeRoleText((u&&u.role)||'');const policy=parsePermissionPolicy(u&&u.permissions);const base=new Set(defaultPermissionsForRoleKey(k));policy.deny.forEach(x=>base.delete(String(x)));const allowed=new Set(ROLE_OPTIONAL_PERMISSIONS[k]||[]);policy.allow.forEach(x=>{if(allowed.has(String(x)))base.add(String(x))});return [...base]}
 function hasPerm(key){const p=currentUserPermissions();return p.includes('ALL')||p.includes(key)}
+function hasAnyPerm(keys){const list=Array.isArray(keys)?keys:[keys];return list.filter(Boolean).some(key=>hasPerm(String(key)))}
 function isBankUser(){return role==='bank' && !!data}
 function canCreateClient(){return isBankUser() && hasPerm('clients.create')}
 function canCreateAccount(type=''){return isBankUser() && (isCreditTypeName(type)?hasPerm('credit_accounts.create'):hasPerm('accounts.create'))}

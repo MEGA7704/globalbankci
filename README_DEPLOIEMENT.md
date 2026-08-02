@@ -229,3 +229,8 @@ Voir `AMELIORATIONS_AGENTS_V15.md` pour les nouveaux popups caisse, la liste des
 
 ## Mouvements agents V15
 Les listes de mouvements Agent caisse et Agent crédit sont fermées et vérifiées côté Worker. Consultez `MOUVEMENTS_AGENTS_V15.md`.
+
+
+## Correction V16 — `hasAnyPerm`
+
+La fonction d’interface `hasAnyPerm(keys)` est maintenant définie à côté de `hasPerm(key)`. Elle vérifie une liste de permissions dans la session réellement chargée par le serveur et corrige l’affichage des sections **Crédits**, **Mouvements** et **Mes opérations** des agents.

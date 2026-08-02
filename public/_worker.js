@@ -496,7 +496,7 @@ const ROLE_PERMISSIONS=Object.freeze({
  admin_bank:['clients.read','clients.create','clients.update','clients.block','clients.unblock','clients.delete','clients.restore','accounts.read','accounts.create','accounts.update','accounts.block','accounts.unblock','accounts.close','accounts.delete','accounts.restore','moves.read.all','moves.create.all','moves.correct','credits.manage','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credits.penalties.apply','credit_movements.read','credit_documents.print','credit_reports.read.limited','users.manage.agents','reports.read.all','settings.manage','security.read','exercises.manage','messages.manage','correction.request','correction.review','receipts.print','documents.print','profile.read.own'],
  agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.read.own','receipts.print','correction.request','profile.read.own'],
  agent_credit:['clients.read','credit_accounts.read','credit_accounts.create','credits.create','credits.update.draft','credits.schedule.generate','credit_payments.create','credit_movements.read','credit_documents.print','credit_reports.read.limited','correction.request','profile.read.own'],
- auditeur:['clients.read','accounts.read','moves.read','credits.read','reports.read.limited','documents.print','profile.read.own']
+ auditeur:['clients.read','accounts.read','moves.read','credits.read','reports.read.limited','documents.print','correction.request','profile.read.own']
 });
 const ROLE_EXTRA_PERMISSIONS=Object.freeze({
  agent_caisse:['clients.create','clients.update.basic','moves.create.allowed_fees'],
@@ -640,7 +640,7 @@ async function bankPayload(env,bankId,session={}){
   const credit_source_account=sourceAccount?{id:sourceAccount.id,client_id:sourceAccount.client_id,number:sourceAccount.number,type:sourceAccount.type,status:sourceAccount.status,is_blocked:sourceAccount.is_blocked}:null;
   return {bank:limitedBank,user,clients:activeClients,accounts,moves,credit_sources,credit_source_account,operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:(movementTypesQ.results||[]).filter(t=>norm(t.name).includes('credit')||norm(t.name).includes('recouvrement')||norm(t.name).includes('penalite')),management_settings};
  }
- const auditAccounts=activeAccounts.filter(a=>!isCompanyAccountRow(a,bankId));const auditIds=new Set(auditAccounts.map(a=>String(a.id)));return {bank:limitedBank,user,clients:activeClients,accounts:auditAccounts,moves:allMoves.filter(m=>auditIds.has(String(m.account_id||''))),account_types:[],movement_types:[],management_settings,report_scope:'limited'};
+ const auditAccounts=activeAccounts.filter(a=>!isCompanyAccountRow(a,bankId));const auditIds=new Set(auditAccounts.map(a=>String(a.id)));return {bank:limitedBank,user,clients:activeClients,accounts:auditAccounts,moves:allMoves.filter(m=>auditIds.has(String(m.account_id||''))),operation_requests:(requestQ.results||[]).filter(r=>String(r.requested_by)===uidValue),account_types:[],movement_types:[],management_settings,report_scope:'limited'};
 }
 async function handleApi(request,env,path){
  try{

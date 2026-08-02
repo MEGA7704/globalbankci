@@ -16,5 +16,6 @@ assert.ok(menuBlock,'ROLE_MENUS introuvable');
 assert.doesNotMatch(menuBlock[0],/'logout'/);
 assert.equal((html.match(/class="logoutProfile"/g)||[]).length,1);
 assert.doesNotMatch(menuBlock[0],/agent_credit:\s*\[[^\]]*parametres/s);
-assert.doesNotMatch(menuBlock[0],/auditeur:\s*\[[^\]]*(?:credit|caisse|corrections|parametres)/s);
+assert.doesNotMatch(menuBlock[0],/auditeur:\s*\[[^\]]*(?:credit|caisse|parametres)/s);
+assert.match(menuBlock[0],/auditeur:\s*\[[^\]]*corrections/s);
 console.log('ALL AGENT DASHBOARDS V11 UI TESTS PASSED');

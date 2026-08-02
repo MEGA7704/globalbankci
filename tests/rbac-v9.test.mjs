@@ -68,11 +68,11 @@ r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:cred
 r=await call('/api/move',{method:'POST',cookie:creditCookie,body:{accountId:ordinary.id,type:'Retrait',amount:100,role:'admin_bank'}});assert.equal(r.status,403);
 r=await call('/api/account',{method:'POST',cookie:creditCookie,body:{clientId:client.id,type:'Compte courant',deposit:100}});assert.equal(r.status,403);
 
-// Auditor is read-only.
+// Auditor remains read-only for banking data but may submit a correction request.
 const auditLogin='audit@example.invalid',auditPass='AuditorTest9!';
 r=await call('/api/user',{method:'POST',cookie:adminCookie,body:{name:'Audit Test',login:auditLogin,pass:auditPass,role:'Agent consultation / auditeur',permissions:{allow:['clients.create'],deny:[]}}});assert.equal(r.status,200,r.text);
 r=await call('/api/login',{method:'POST',body:{login:auditLogin,pass:auditPass}});assert.equal(r.status,200,r.text);let auditCookie=r.cookie;
-r=await call('/api/load',{cookie:auditCookie});assert.equal(r.status,200);assert.equal(r.json.user.readonly,true);assert.equal(r.json.user.permissions.includes('clients.create'),false);assert.equal(r.json.security_logs,undefined);
+r=await call('/api/load',{cookie:auditCookie});assert.equal(r.status,200);assert.equal(r.json.user.readonly,true);assert.equal(r.json.user.permissions.includes('clients.create'),false);assert.equal(r.json.user.permissions.includes('correction.request'),true);assert.equal(r.json.security_logs,undefined);const auditMove=r.json.moves[0];assert.ok(auditMove,'Auditor must receive at least one readable movement');r=await call('/api/correction-requests',{method:'POST',cookie:auditCookie,body:{movement_id:auditMove.id,request_type:'verification',reason:'Demande de vérification transmise par l’auditeur.'}});assert.equal(r.status,200,r.text);r=await call('/api/load',{cookie:auditCookie});assert.ok(Array.isArray(r.json.operation_requests)&&r.json.operation_requests.length>=1);
 r=await call('/api/client',{method:'POST',cookie:auditCookie,body:{name:'Interdit'}});assert.equal(r.status,403);
 r=await call('/api/move',{method:'POST',cookie:auditCookie,body:{accountId:ordinary.id,type:'Dépôt',amount:1}});assert.equal(r.status,403);
 r=await call('/api/client/delete',{method:'POST',cookie:auditCookie,body:{id:client.id}});assert.equal(r.status,403);

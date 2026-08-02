@@ -3,7 +3,7 @@
 Cette version relie directement le Worker aux ressources Cloudflare sans inscrire les identifiants Super Admin dans le dépôt.
 
 
-## Interface agents V12
+## Interface agents V11
 
 Les sessions Agent caisse, Agent crédit et Auditeur utilisent maintenant une interface bancaire professionnelle commune. Les menus restent strictement limités aux autorisations RBAC de chaque rôle. Le doublon « Déconnexion » a été retiré du menu horizontal ; le bouton de sortie unique se trouve dans le bloc utilisateur.
 
@@ -212,3 +212,16 @@ Consultez `RBAC_V9.md` pour la matrice et les principes de sécurité.
 ## Mise à jour V10 — Tableau de bord Agent caisse
 
 La V10 ajoute une présentation bancaire professionnelle spécifique au rôle `agent_caisse` : navigation vert foncé et dorée, cartes quotidiennes, dernières opérations, état vide et responsive mobile/tablette. Les autorisations RBAC de la V9 restent inchangées : aucun accès aux paramètres ou rapports administratifs n'est accordé à l'Agent caisse.
+
+
+## Correction V14 — Comptes crédit
+
+- La section « Crédits » a été retirée du menu horizontal de l’Administrateur banque.
+- Depuis **Comptes**, le bouton **Rapport crédit** ouvre une page détaillée du crédit.
+- La page présente le souscripteur, les conditions, la source d’approvisionnement, les totaux, les paiements, les pénalités, l’échéancier et tous les mouvements.
+- Le retour ramène à la liste des comptes, sans passer par la section Rapports.
+
+
+## Interface agents V14
+
+Voir `AMELIORATIONS_AGENTS_V14.md` pour les nouveaux popups caisse, la liste des crédits et les fiches détaillées en lecture seule.

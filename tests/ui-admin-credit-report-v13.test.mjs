@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+const adminMenu=html.match(/admin_bank:\[([^\]]+)\]/)?.[1]||'';
+assert.doesNotMatch(adminMenu, /['"]credit['"]/, 'La section Crédits ne doit plus figurer dans le menu Administrateur banque.');
+assert.match(html, /Rapport crédit/);
+assert.match(html, /RAPPORT COMPLET DU CRÉDIT/);
+assert.match(html, /Informations complètes du souscripteur/);
+assert.match(html, /Conditions et références du crédit/);
+assert.match(html, /Approvisionnement source/);
+assert.match(html, /function closeCreditDetailsPage\(/);
+assert.match(html, /window\.creditDetailReturnPage=currentRoleKey\(\)==='agent_credit'\?'credit':'comptes'/);
+assert.match(html, /function comptes\(\)\{\s*if\(window\.currentCreditDetailId\)/);
+assert.doesNotMatch(html, /if\(active!==['"]rapports['"]\)\{active=['"]rapports['"]/, 'Le rapport crédit ne doit plus rediriger vers Rapports.');
+console.log('ALL UI ADMIN CREDIT REPORT V13 TESTS PASSED');

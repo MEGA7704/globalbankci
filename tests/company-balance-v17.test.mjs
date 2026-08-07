@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const worker=fs.readFileSync(new URL('../public/_worker.js',import.meta.url),'utf8');
+const ui=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+assert.match(worker,/FORMULE OFFICIELLE V17/);
+assert.match(worker,/computeCompanyOfficialBalance[\s\S]*computeTotalRevenueBank[\s\S]*computeCreditRepaidPrincipalTotal/);
+assert.doesNotMatch(worker,/computeCompanyOfficialBalance[\s\S]{0,700}computeDecaissementRemainingAvailableTotal/);
+assert.match(ui,/RÈGLE OFFICIELLE V17/);
+const fn=ui.match(/function officialCompanyAccountBalance\(account,scope=\{\}\)\{[\s\S]*?\n\}/)?.[0]||'';
+assert.ok(fn,'officialCompanyAccountBalance introuvable');
+assert.match(fn,/companyRevenueBankTotalForScope/);
+assert.match(fn,/officialCreditPrincipalRepaymentTotalForScope/);
+assert.doesNotMatch(fn,/companyApprovisionnementTotalForScope/);
+assert.doesNotMatch(fn,/companyDecaissementTotalForScope/);
+assert.doesNotMatch(fn,/companyDecaissementRemainingAvailableTotalForScope/);
+console.log('COMPANY BALANCE V17 TESTS PASSED');

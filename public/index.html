@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLOBAL BANK</title>
+<title>GLOBAL BANK - Cloudflare Pages D1 KV</title>
 
 <style id="premium-dashboard-ui-v2">
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -1502,7 +1502,7 @@ body.modal-open{overflow:hidden}.proModalBackdrop{position:fixed!important;inset
           <button id="loginBtn" class="auth-primary-button" type="button" onclick="return login(event)"><span>SE CONNECTER</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M14 7l5 5-5 5"></path></svg></button>
           <div class="auth-secondary-actions">
             <button type="button" class="auth-secondary-button" onclick="openWhatsappContact()"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13v-1a8 8 0 0 1 16 0v1"></path><path d="M4 13h3v6H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 1-2ZM20 13h-3v6h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-1-2ZM17 19c0 1.1-1.8 2-4 2"></path></svg><span>Support</span></button>
-            <button type="button" class="auth-secondary-button" onclick="switchTab('register',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c.5-4 2.5-6 6-6 2.2 0 3.9.8 4.9 2.4M18 9v6M15 12h6"></path></svg><span>Créer une Banque</span></button>
+            <button type="button" class="auth-secondary-button" onclick="switchTab('register',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c.5-4 2.5-6 6-6 2.2 0 3.9.8 4.9 2.4M18 9v6M15 12h6"></path></svg><span>Ouvrir un compte</span></button>
           </div>
           <div id="forgotInfo" class="auth-info hidden"></div>
         </div>
@@ -2173,21 +2173,17 @@ function companyAnnualNetBankProfit(year){
 }
 function officialCompanyAccountBalance(account,scope={}){
  if(!account)return 0;
- // RÈGLE OFFICIELLE : le solde disponible du Compte entreprise automatique est composé de :
- // 1) tous les paiements crédits remboursés, limités au capital accordé
- //    (sans frais ni intérêts), ajoutés au fur et à mesure de chaque remboursement ;
- // 2) le Total Revenu banque, identique au TOTAL GÉNÉRAL du rapport
- //    « Point détaillé des revenus de la banque » ;
- // 3) les approvisionnements du Compte entreprise ;
- // 4) moins les décaissements du Compte entreprise ;
- // 5) plus le montant restant disponible du/des décaissements, après déduction
- //    des crédits qui ont choisi ces décaissements comme source.
+ // RÈGLE OFFICIELLE V17 :
+ // Solde Compte entreprise automatique =
+ //   capital crédit remboursé, plafonné au montant « Crédit accordé »
+ //   + Total Revenu banque.
+ // Les frais, intérêts et pénalités ne font jamais partie du capital remboursé :
+ // lorsqu'ils constituent un revenu, ils sont comptés une seule fois dans
+ // « Total Revenu banque ». Approvisionnement et Décaissement sont des flux de
+ // trésorerie/sources de financement et n'entrent pas dans ce solde officiel.
  const revenue=(typeof companyRevenueBankTotalForScope==='function')?companyRevenueBankTotalForScope(scope):0;
  const creditRepaid=(typeof officialCreditPrincipalRepaymentTotalForScope==='function')?officialCreditPrincipalRepaymentTotalForScope(scope):0;
- const appro=(typeof companyApprovisionnementTotalForScope==='function')?companyApprovisionnementTotalForScope(scope):0;
- const dec=(typeof companyDecaissementTotalForScope==='function')?companyDecaissementTotalForScope(scope):0;
- const decRemaining=(typeof companyDecaissementRemainingAvailableTotalForScope==='function')?companyDecaissementRemainingAvailableTotalForScope(scope):0;
- return Math.round((Number(revenue||0)+Number(creditRepaid||0)+Number(appro||0)-Number(dec||0)+Number(decRemaining||0))*100)/100;
+ return Math.round((Number(revenue||0)+Number(creditRepaid||0))*100)/100;
 }
 function officialAccountBalance(account,scope={}){
  if(!account)return 0;
@@ -3086,7 +3082,7 @@ function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;'
 function isAccountBlocked(a){return Number((a&&a.is_blocked)||0)===1}
 
 const COMPANY_CLIENT_MARKER='__BANK_COMPANY_CLIENT__';
-const FREE_VERSION_PAYMENT_LINK='https://pay.wave.com/m/M_ci_Enx-2JNAklk-/c/ci/?amount=132000';
+const FREE_VERSION_PAYMENT_LINK='https://pay.wave.com/m/M_ci_Enx-2JNAklk-/c/ci/?amount=18000';
 function isCompanyClient(c){return !!c&&(String(c.id||'').startsWith('COMPANY-CLIENT-')||String(c.piece||'')===COMPANY_CLIENT_MARKER||String(c.job||'').toLowerCase().includes('compte entreprise de la banque'));}
 function isCompanyAccount(a){if(!a)return false;const c=clientsArr().find(x=>String(x.id)===String(a.client_id));return String(a.id||'').startsWith('COMPANY-ACCOUNT-')||String(a.number||'').startsWith('ENT-')||isCompanyClient(c);}
 function companyMovementNames(){return ['Approvisionnement','Décaissement'];}

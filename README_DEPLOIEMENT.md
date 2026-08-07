@@ -234,3 +234,7 @@ Les listes de mouvements Agent caisse et Agent crédit sont fermées et vérifi�
 ## Correction V16 — `hasAnyPerm`
 
 La fonction d’interface `hasAnyPerm(keys)` est maintenant définie à côté de `hasPerm(key)`. Elle vérifie une liste de permissions dans la session réellement chargée par le serveur et corrige l’affichage des sections **Crédits**, **Mouvements** et **Mes opérations** des agents.
+
+## V17 — Solde du Compte entreprise automatique
+
+Formule officielle : **capital crédit effectivement remboursé, plafonné au Crédit accordé + Total Revenu banque**. Les frais, intérêts et pénalités ne sont jamais ajoutés au capital remboursé ; s’ils constituent un revenu bancaire, ils apparaissent uniquement dans le Total Revenu banque. Les approvisionnements et décaissements sont exclus de ce solde officiel.

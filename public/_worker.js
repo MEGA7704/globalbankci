@@ -194,29 +194,42 @@ async function computeCreditRepaidPrincipalTotal(env,bankId,scope={}){
  return Math.round(total*100)/100;
 }
 async function computeTotalRevenueBank(env,bankId,scope={}){
+ // V17 — Total Revenu banque : même logique que le rapport des revenus.
+ // Les flux de trésorerie du Compte entreprise (Approvisionnement / Décaissement)
+ // ne sont jamais des revenus. Les paiements de crédit sont du remboursement de
+ // capital/dette et ne sont jamais comptés ici.
  const accountId=companyAccountId(bankId);
- const rows=(await env.DB.prepare("SELECT m.id,m.account_id,m.type,m.description,m.amount,m.created_at,a.number AS acc_number,a.type AS acc_type FROM moves m JOIN accounts a ON a.id=m.account_id AND a.bank_id=m.bank_id WHERE m.bank_id=? AND COALESCE(a.is_deleted,0)=0 AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%supprim%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%delete%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%desactiv%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%archive%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%ferme%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%clotur%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%inactif%' ORDER BY datetime(m.created_at) ASC, m.id ASC").bind(bankId).all()).results||[];
+ const configured=(await env.DB.prepare("SELECT name,is_active,category,is_bank_revenue FROM movement_types WHERE bank_id=?").bind(bankId).all()).results||[];
+ const explicit=new Map(configured.map(r=>[norm(r.name),{active:Number(r.is_active??1)!==0,isRevenue:Number(r.is_bank_revenue)===1||norm(r.category)==='bank_revenue'}]));
+ const ignoredRows=(await env.DB.prepare('SELECT revenue_key FROM ignored_revenues WHERE bank_id=?').bind(bankId).all()).results||[];
+ const ignored=new Set(ignoredRows.map(r=>norm(r.revenue_key)));
+ const rows=(await env.DB.prepare("SELECT m.id,m.account_id,m.type,m.description,m.amount,m.created_at,a.number AS acc_number,a.type AS acc_type FROM moves m JOIN accounts a ON a.id=m.account_id AND a.bank_id=m.bank_id WHERE m.bank_id=? AND COALESCE(m.is_voided,0)=0 AND COALESCE(a.is_deleted,0)=0 AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%supprim%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%delete%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%desactiv%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%archive%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%ferme%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%clotur%' AND lower(COALESCE(a.status,'Actif')) NOT LIKE '%inactif%' ORDER BY datetime(m.created_at) ASC, m.id ASC").bind(bankId).all()).results||[];
  let total=0;
  for(const m of rows){
   if(scope&&(scope.year||scope.month||scope.start||scope.end)&&!rowInScope(m,scope))continue;
   const amount=Math.abs(Number(m.amount||0)||0);
   if(amount<=0)continue;
   const isCompany=String(m.account_id||'')===String(accountId)||String(m.acc_number||'')===companyAccountNumber(bankId);
-  if(isCompany){
-   if(isCompanyApprovisionnementType(m.type))total+=amount;
-   else if(isCompanyDecaissementType(m.type))total-=amount;
-   continue;
-  }
+  if(isCompany)continue;
   if(isCreditPaymentTypeServer(m.type))continue;
+  const key=norm(m.type);
+  if(ignored.has(key)||ignored.has(norm(m.id)))continue;
+  const cfg=explicit.get(key);
+  if(cfg){if(cfg.active&&cfg.isRevenue)total+=amount;continue;}
   if(isRevenueTextServer(m.type,m.description))total+=amount;
  }
  return Math.round(total*100)/100;
 }
 async function computeCompanyOfficialBalance(env,bankId,scope={}){
+ // FORMULE OFFICIELLE V17 :
+ // Solde Compte entreprise automatique =
+ //   Total capital crédit effectivement remboursé (plafonné au Crédit accordé)
+ //   + Total Revenu banque.
+ // Aucun Approvisionnement, Décaissement, frais ou intérêt n'est ajouté au
+ // capital remboursé. Frais/intérêts n'entrent que dans Total Revenu banque.
  const revenue=await computeTotalRevenueBank(env,bankId,scope||{});
  const repaid=await computeCreditRepaidPrincipalTotal(env,bankId,scope||{});
- const remaining=await computeDecaissementRemainingAvailableTotal(env,bankId,scope||{});
- return Math.round((Number(revenue||0)+Number(repaid||0)+Number(remaining||0))*100)/100;
+ return Math.round((Number(revenue||0)+Number(repaid||0))*100)/100;
 }
 async function updateCompanyAccountStoredBalance(env,bankId){
  const accountId=companyAccountId(bankId);

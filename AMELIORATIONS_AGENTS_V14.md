@@ -6,7 +6,7 @@
 - Le bouton ouvre un popup professionnel limité aux mouvements autorisés par les permissions serveur.
 - Les comptes entreprise et les comptes crédit ne sont pas proposés dans ce formulaire caisse.
 
-## Agent crédit
+## Agent crédit  
 - Les boutons **Liste des crédits**, **+ Nouveau compte crédit** et **Paiement crédit** sont alignés avec **Historique des paiements crédit**.
 - La création et le paiement utilisent des popups professionnels.
 - La liste des crédits est une page distincte.

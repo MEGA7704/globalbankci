@@ -13,5 +13,5 @@
 - Le bouton **Détail** ouvre la fiche complète du crédit en lecture seule.
 - Le retour depuis la fiche détaillée ramène à la liste des crédits.
 
-## Sécurité
+## Sécurité   
 Les vérifications RBAC restent obligatoires côté Worker. Le navigateur ne décide jamais du rôle, de la banque ou des permissions.

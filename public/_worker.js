@@ -237,6 +237,18 @@ async function updateCompanyAccountStoredBalance(env,bankId){
  await env.DB.prepare('UPDATE accounts SET balance=? WHERE id=? AND bank_id=?').bind(official,accountId,bankId).run();
  return official;
 }
+// V18 — un compte crédit représente une dette à recouvrer, pas une caisse disponible.
+// Le reste à rembourser affiché par l'interface provient du dernier mouvement valide.
+// On reprend donc cette même source côté serveur afin qu'un ancien accounts.balance
+// désynchronisé ne bloque pas à tort un remboursement avec « Solde insuffisant ».
+async function computeCreditOutstandingBalance(env,bankId,acc){
+ if(!acc)return 0;
+ const last=await env.DB.prepare("SELECT balance_after FROM moves WHERE bank_id=? AND account_id=? AND COALESCE(is_voided,0)=0 AND balance_after IS NOT NULL ORDER BY datetime(created_at) DESC, rowid DESC LIMIT 1").bind(bankId,acc.id).first();
+ const fromMove=last&&last.balance_after!==undefined&&last.balance_after!==null?Number(last.balance_after):NaN;
+ if(Number.isFinite(fromMove))return Math.max(0,Math.round(fromMove*100)/100);
+ const stored=Number(acc.balance||0);
+ return Math.max(0,Math.round((Number.isFinite(stored)?stored:0)*100)/100);
+}
 async function syncCreditRepaymentsToCompanyAccount(env,bankId){
  const accountId=companyAccountId(bankId);
  const company=await env.DB.prepare('SELECT id FROM accounts WHERE id=? AND bank_id=?').bind(accountId,bankId).first();
@@ -1131,8 +1143,14 @@ async function handleApi(request,env,path){
      if(amount>companyAvailable)return json({error:'Décaissement impossible : montant supérieur au solde disponible du Compte entreprise automatique.'},400);
     }
    }
-   if(!isCompanyAccount&&debit&&Number(acc.balance)<amount)return json({error:'Solde insuffisant.'},400);
-   let newBal=isCompanyAccount?Math.round((Number(companyAvailable||0)+(companyDecaissementOnly?-amount:amount))*100)/100:Number(acc.balance)+(debit?-amount:(increaseDebt?amount:amount));
+   let currentAccountBalance=Number(acc.balance||0);
+   if(isCredit&&!isCompanyAccount){
+    currentAccountBalance=await computeCreditOutstandingBalance(env,bankId,acc);
+    if(isPaymentCredit&&amount>currentAccountBalance)return json({error:'Paiement impossible : montant supérieur au reste à rembourser ('+currentAccountBalance+' FCFA).'},400);
+   }else if(!isCompanyAccount&&debit&&currentAccountBalance<amount){
+    return json({error:'Solde insuffisant.'},400);
+   }
+   let newBal=isCompanyAccount?Math.round((Number(companyAvailable||0)+(companyDecaissementOnly?-amount:amount))*100)/100:Math.round((currentAccountBalance+(debit?-amount:(increaseDebt?amount:amount)))*100)/100;
    const desc=m.description||(companyDecaissementOnly?'Décaissement du compte entreprise automatique — revenu négatif dans le rapport':(isPenalty?('Pénalité de retard automatique ('+(Number(acc.credit_penalty_rate||0)||0)+'% de l’échéance en cours)'):(isCreditCarnetFee?'Frais de carnet crédit':(isRecoveryFee?'Frais de recouvrement':type))));
    let finalBal=newBal;
    const moveId=uid('MOV');

@@ -181,7 +181,7 @@ async function computeCreditRepaidPrincipalTotal(env,bankId,scope={}){
   const principal=Math.abs(Number(acc.credit_amount||0)||0);
   if(principal<=0)continue;
   let remaining=principal;
-  const pays=(await env.DB.prepare("SELECT id,type,description,amount,created_at FROM moves WHERE bank_id=? AND account_id=? ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,acc.id).all()).results||[];
+  const pays=(await env.DB.prepare("SELECT id,type,description,amount,created_at FROM moves WHERE bank_id=? AND account_id=? AND COALESCE(is_voided,0)=0 ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,acc.id).all()).results||[];
   for(const m of pays){
    if(!isCreditPaymentTypeServer(m.type))continue;
    const paid=Math.abs(Number(m.amount||0)||0);
@@ -220,16 +220,34 @@ async function computeTotalRevenueBank(env,bankId,scope={}){
  }
  return Math.round(total*100)/100;
 }
+async function computeCompanyManualCashflowTotal(env,bankId,scope={}){
+ // V19 — Les mouvements réels du Compte entreprise font désormais partie de
+ // son solde officiel : Approvisionnement = entrée, Décaissement = sortie.
+ const accountId=companyAccountId(bankId);
+ const rows=(await env.DB.prepare("SELECT id,type,amount,created_at FROM moves WHERE bank_id=? AND account_id=? AND COALESCE(is_voided,0)=0 ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,accountId).all()).results||[];
+ let total=0;
+ for(const m of rows){
+  if(scope&&(scope.year||scope.month||scope.start||scope.end)&&!rowInScope(m,scope))continue;
+  const amount=Math.abs(Number(m.amount||0)||0);
+  if(amount<=0)continue;
+  if(isCompanyApprovisionnementType(m.type))total+=amount;
+  else if(isCompanyDecaissementType(m.type))total-=amount;
+ }
+ return Math.round(total*100)/100;
+}
 async function computeCompanyOfficialBalance(env,bankId,scope={}){
- // FORMULE OFFICIELLE V17 :
+ // FORMULE OFFICIELLE V19 :
  // Solde Compte entreprise automatique =
  //   Total capital crédit effectivement remboursé (plafonné au Crédit accordé)
- //   + Total Revenu banque.
- // Aucun Approvisionnement, Décaissement, frais ou intérêt n'est ajouté au
- // capital remboursé. Frais/intérêts n'entrent que dans Total Revenu banque.
+ //   + Total Revenu banque
+ //   + Approvisionnements du Compte entreprise
+ //   - Décaissements du Compte entreprise.
+ // Ainsi, tout décaissement modifie immédiatement le solde enregistré et tous
+ // les indicateurs du tableau de bord qui dépendent du Compte entreprise.
  const revenue=await computeTotalRevenueBank(env,bankId,scope||{});
  const repaid=await computeCreditRepaidPrincipalTotal(env,bankId,scope||{});
- return Math.round((Number(revenue||0)+Number(repaid||0))*100)/100;
+ const cashflow=await computeCompanyManualCashflowTotal(env,bankId,scope||{});
+ return Math.round((Number(revenue||0)+Number(repaid||0)+Number(cashflow||0))*100)/100;
 }
 async function updateCompanyAccountStoredBalance(env,bankId){
  const accountId=companyAccountId(bankId);
@@ -259,7 +277,7 @@ async function syncCreditRepaymentsToCompanyAccount(env,bankId){
   const principal=Math.abs(Number(acc.credit_amount||0)||0);
   if(principal<=0)continue;
   let remaining=principal;
-  const payments=(await env.DB.prepare("SELECT id,type,description,amount,created_at FROM moves WHERE bank_id=? AND account_id=? ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,acc.id).all()).results||[];
+  const payments=(await env.DB.prepare("SELECT id,type,description,amount,created_at FROM moves WHERE bank_id=? AND account_id=? AND COALESCE(is_voided,0)=0 ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,acc.id).all()).results||[];
   for(const m of payments){
    if(!isCreditPaymentTypeServer(m.type))continue;
    const paid=Math.abs(Number(m.amount||0)||0);
@@ -1182,7 +1200,7 @@ async function handleApi(request,env,path){
   if(path==='/api/move/delete'&&request.method==='POST'){await rejectIfExerciseClosed(env,bankId);
    const m=await body(request);if(!m.id)return json({error:'Opération obligatoire.'},400);const mv=await env.DB.prepare('SELECT * FROM moves WHERE id=? AND bank_id=? AND COALESCE(is_voided,0)=0').bind(m.id,bankId).first();if(!mv)return json({error:'Opération introuvable ou déjà annulée.'},404);const acc=await env.DB.prepare('SELECT * FROM accounts WHERE id=? AND bank_id=?').bind(mv.account_id,bankId).first();
    if(acc){const t=norm(mv.type);const debit=(t==='retrait'||t==='decaissement'||t.includes('paiement credit')||(t.startsWith('frais')&&!t.includes('penalite')&&!t.includes('recouvrement')));const corrected=Number(acc.balance)+(debit?Number(mv.amount):-Number(mv.amount));await env.DB.prepare('UPDATE accounts SET balance=? WHERE id=? AND bank_id=?').bind(corrected,acc.id,bankId).run();}
-   await env.DB.prepare("UPDATE moves SET is_voided=1,voided_by=?,voided_at=datetime('now'),void_reason=? WHERE id=? AND bank_id=?").bind(String(s.userName||'Administrateur banque'),String(m.reason||'Annulation administrateur sécurisée'),m.id,bankId).run();await addSecurityLog(env,bankId,s,'Annulation logique mouvement','Mouvements','autorisé',String(m.reason||''),{permission:'moves.correct',route:path,resource:m.id});await addLog(env,bankId,'Opération annulée logiquement : '+m.id);return json({ok:true,logical_void:true});
+   await env.DB.prepare("UPDATE moves SET is_voided=1,voided_by=?,voided_at=datetime('now'),void_reason=? WHERE id=? AND bank_id=?").bind(String(s.userName||'Administrateur banque'),String(m.reason||'Annulation administrateur sécurisée'),m.id,bankId).run();await updateCompanyAccountStoredBalance(env,bankId);await addSecurityLog(env,bankId,s,'Annulation logique mouvement','Mouvements','autorisé',String(m.reason||''),{permission:'moves.correct',route:path,resource:m.id});await addLog(env,bankId,'Opération annulée logiquement : '+m.id);return json({ok:true,logical_void:true});
   }
   if(path==='/api/settings/account-type'&&request.method==='POST'){
    const t=await body(request); const name=String(t.name||'').trim(); if(!name)return json({error:'Nom obligatoire.'},400);

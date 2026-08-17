@@ -220,34 +220,57 @@ async function computeTotalRevenueBank(env,bankId,scope={}){
  }
  return Math.round(total*100)/100;
 }
-async function computeCompanyManualCashflowTotal(env,bankId,scope={}){
- // V19 — Les mouvements réels du Compte entreprise font désormais partie de
- // son solde officiel : Approvisionnement = entrée, Décaissement = sortie.
+async function computeCompanyDecaissementTotal(env,bankId,scope={}){
  const accountId=companyAccountId(bankId);
  const rows=(await env.DB.prepare("SELECT id,type,amount,created_at FROM moves WHERE bank_id=? AND account_id=? AND COALESCE(is_voided,0)=0 ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,accountId).all()).results||[];
  let total=0;
  for(const m of rows){
   if(scope&&(scope.year||scope.month||scope.start||scope.end)&&!rowInScope(m,scope))continue;
-  const amount=Math.abs(Number(m.amount||0)||0);
-  if(amount<=0)continue;
-  if(isCompanyApprovisionnementType(m.type))total+=amount;
-  else if(isCompanyDecaissementType(m.type))total-=amount;
+  if(!isCompanyDecaissementType(m.type))continue;
+  total+=Math.abs(Number(m.amount||0)||0);
  }
  return Math.round(total*100)/100;
 }
+async function computeCompanyActiveApprovisionnementBalanceTotal(env,bankId,scope={}){
+ // V20 — APPROVISIONNEMENTS ACTIFS : on ne retient plus le cumul historique brut.
+ // Pour chaque approvisionnement valide, seul le montant encore disponible après
+ // affectation aux crédits reste actif dans le Compte entreprise.
+ // Exemple : Approvisionnement 115 000 - Crédit financé 115 000 = actif 0.
+ const accountId=companyAccountId(bankId);
+ const rows=(await env.DB.prepare("SELECT id,type,amount,created_at FROM moves WHERE bank_id=? AND account_id=? AND COALESCE(is_voided,0)=0 ORDER BY datetime(created_at) ASC, id ASC").bind(bankId,accountId).all()).results||[];
+ let total=0;
+ for(const m of rows){
+  if(!isCompanyApprovisionnementType(m.type))continue;
+  if(scope&&(scope.year||scope.month||scope.start||scope.end)&&!rowInScope(m,scope))continue;
+  const initial=Math.abs(Number(m.amount||0)||0);
+  if(initial<=0)continue;
+  const used=await usedCreditAmountForApprovisionnementSource(env,bankId,m.id);
+  const active=Math.max(0,Math.round((initial-Math.max(0,Number(used||0)))*100)/100);
+  if(active>0)total+=active;
+ }
+ return Math.round(total*100)/100;
+}
+async function computeCompanyManualCashflowTotal(env,bankId,scope={}){
+ // Compatibilité interne V20 : trésorerie manuelle = Approvisionnements actifs - Décaissements.
+ const activeAppro=await computeCompanyActiveApprovisionnementBalanceTotal(env,bankId,scope||{});
+ const decaissement=await computeCompanyDecaissementTotal(env,bankId,scope||{});
+ return Math.round((Number(activeAppro||0)-Number(decaissement||0))*100)/100;
+}
 async function computeCompanyOfficialBalance(env,bankId,scope={}){
- // FORMULE OFFICIELLE V19 :
+ // FORMULE OFFICIELLE V20 :
  // Solde Compte entreprise automatique =
  //   Total capital crédit effectivement remboursé (plafonné au Crédit accordé)
  //   + Total Revenu banque
- //   + Approvisionnements du Compte entreprise
+ //   + Solde des APPROVISIONNEMENTS ACTIFS
  //   - Décaissements du Compte entreprise.
- // Ainsi, tout décaissement modifie immédiatement le solde enregistré et tous
- // les indicateurs du tableau de bord qui dépendent du Compte entreprise.
+ // Un approvisionnement totalement affecté à un crédit n'est donc plus compté
+ // une seconde fois dans le solde. Son capital revient progressivement via les
+ // remboursements de crédit réellement encaissés.
  const revenue=await computeTotalRevenueBank(env,bankId,scope||{});
  const repaid=await computeCreditRepaidPrincipalTotal(env,bankId,scope||{});
- const cashflow=await computeCompanyManualCashflowTotal(env,bankId,scope||{});
- return Math.round((Number(revenue||0)+Number(repaid||0)+Number(cashflow||0))*100)/100;
+ const activeAppro=await computeCompanyActiveApprovisionnementBalanceTotal(env,bankId,scope||{});
+ const decaissement=await computeCompanyDecaissementTotal(env,bankId,scope||{});
+ return Math.round((Number(repaid||0)+Number(revenue||0)+Number(activeAppro||0)-Number(decaissement||0))*100)/100;
 }
 async function updateCompanyAccountStoredBalance(env,bankId){
  const accountId=companyAccountId(bankId);

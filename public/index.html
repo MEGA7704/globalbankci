@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLOBAL BANK </title>
+<title>GLOBAL BANK - Cloudflare Pages D1 KV</title>
 
 <style id="premium-dashboard-ui-v2">
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -2191,21 +2191,29 @@ function companyAnnualNetBankProfit(year){
  }
  return Math.round(total*100)/100;
 }
+function companyApprovisionnementActifTotalForScope(scope={}){
+ // V20 — Solde des approvisionnements encore actifs/disponibles.
+ // C'est exactement le cumul restant après déduction du capital des crédits
+ // déjà affectés à chaque approvisionnement source.
+ return (typeof companyApprovisionnementRemainingTotalForScope==='function')
+  ?Number(companyApprovisionnementRemainingTotalForScope(scope)||0)
+  :0;
+}
 function officialCompanyAccountBalance(account,scope={}){
  if(!account)return 0;
- // RÈGLE OFFICIELLE V19 :
+ // RÈGLE OFFICIELLE V20 :
  // Solde Compte entreprise automatique =
  //   capital crédit remboursé, plafonné au montant « Crédit accordé »
  //   + Total Revenu banque
- //   + Approvisionnements
+ //   + solde des APPROVISIONNEMENTS ACTIFS
  //   - Décaissements.
- // Un décaissement est donc une vraie sortie du Compte entreprise et modifie
- // immédiatement le tableau de bord, la Gestion et les rapports dépendants.
+ // Un approvisionnement déjà entièrement admis en crédit contribue à 0 FCFA ;
+ // le capital revient ensuite dans le compte au rythme des remboursements réels.
  const revenue=(typeof companyRevenueBankTotalForScope==='function')?companyRevenueBankTotalForScope(scope):0;
  const creditRepaid=(typeof officialCreditPrincipalRepaymentTotalForScope==='function')?officialCreditPrincipalRepaymentTotalForScope(scope):0;
- const approvisionnement=(typeof companyApprovisionnementTotalForScope==='function')?companyApprovisionnementTotalForScope(scope):0;
+ const approvisionnementActif=(typeof companyApprovisionnementActifTotalForScope==='function')?companyApprovisionnementActifTotalForScope(scope):0;
  const decaissement=(typeof companyDecaissementTotalForScope==='function')?companyDecaissementTotalForScope(scope):0;
- return Math.round((Number(revenue||0)+Number(creditRepaid||0)+Number(approvisionnement||0)-Number(decaissement||0))*100)/100;
+ return Math.round((Number(creditRepaid||0)+Number(revenue||0)+Number(approvisionnementActif||0)-Number(decaissement||0))*100)/100;
 }
 function officialAccountBalance(account,scope={}){
  if(!account)return 0;
@@ -4270,7 +4278,7 @@ function dashboardPerformanceMetrics(){
   :officialMovesForScope(scope).filter(officialIsVersement).reduce((s,m)=>s+officialAmount(m),0);
  const totalRetraitClientSansEntreprise=(typeof officialBankSoldeWithdrawalsTotal==='function')?officialBankSoldeWithdrawalsTotal(scope):0;
  const totalFraisLiesComptes=(typeof officialMovementFeesTotalForBankBalance==='function')?officialMovementFeesTotalForBankBalance(scope):0;
- const soldeCompteEntreprise=dashboardCompanyAccountBalanceAll(scope);
+ const soldeCompteEntreprise=dashboardCompanyAccountBalanceAll(scope); // V20 : inclut uniquement le solde des approvisionnements actifs
  const totalCompteActifClient=(typeof officialTotalActiveClientAccountsWithoutCompany==='function')
   ?officialTotalActiveClientAccountsWithoutCompany(scope)
   :0;

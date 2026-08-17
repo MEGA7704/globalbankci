@@ -237,4 +237,4 @@ La fonction d’interface `hasAnyPerm(keys)` est maintenant définie à côté d
 
 ## V17 — Solde du Compte entreprise automatique
 
-Formule officielle : **capital crédit effectivement remboursé, plafonné au Crédit accordé + Total Revenu banque**. Les frais, intérêts et pénalités ne sont jamais ajoutés au capital remboursé ; s’ils constituent un revenu bancaire, ils apparaissent uniquement dans le Total Revenu banque. Les approvisionnements et décaissements sont exclus de ce solde officiel.
+Formule officielle V20 : **capital crédit effectivement remboursé, plafonné au Crédit accordé + Total Revenu banque + solde des Approvisionnements actifs - Décaissements**. Un approvisionnement déjà affecté à un crédit n’est plus recompté dans le solde du Compte entreprise ; seule sa partie encore disponible reste active. Les frais, intérêts et pénalités ne sont jamais ajoutés au capital remboursé ; s’ils constituent un revenu bancaire, ils apparaissent uniquement dans le Total Revenu banque.

@@ -9,9 +9,11 @@ assert.match(ui,/Approvisionnement admis en crédit/);
 assert.match(ui,/Approvisionnement restant/);
 assert.match(ui,/approvisionnementAdmisCredit/);
 assert.match(ui,/approvisionnementRestant/);
-assert.match(ui,/dashboardPerfCard\('Approvisionnements','🔄'/);
+assert.match(ui,/function dashboardFinanceCards\(scope,prev\)/);
+assert.match(ui,/Approvisionnements/);
+assert.match(ui,/Taux d’utilisation/);
 
 const total=500000;
 const admitted=325000;
 assert.equal(Math.max(0,total-admitted),175000);
-console.log('DASHBOARD APPROVISIONNEMENTS V19 TESTS PASSED');
+console.log('DASHBOARD APPROVISIONNEMENTS V21 TESTS PASSED');

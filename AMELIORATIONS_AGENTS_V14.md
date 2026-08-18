@@ -15,3 +15,4 @@
 
 ## Sécurité
 Les vérifications RBAC restent obligatoires côté Worker. Le navigateur ne décide jamais du rôle, de la banque ou des permissions.
+  

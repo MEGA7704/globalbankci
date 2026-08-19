@@ -1582,7 +1582,70 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
 @media(max-width:700px){.v24-wrap{width:min(100% - 24px,1440px)}.v24-nav-inner{height:auto;min-height:70px;flex-wrap:wrap;padding:10px 0}.v24-nav-actions{margin-left:auto}.v24-brand strong{font-size:18px}.v24-btn{padding:0 12px}.v24-btn-light span{display:none}.v24-hero{padding-top:30px}.v24-hero h1{font-size:36px}.v24-services-grid,.v24-solution-cards,.v24-stats-card,.v24-advantages-band{grid-template-columns:1fr}.v24-advantages-band>div,.v24-stats-card>div{border-right:0;border-bottom:1px solid rgba(255,255,255,.12)}.v24-cta-band{display:block}.v24-cta-band .v24-btn{margin-top:18px;width:100%}.v24-footer-grid{grid-template-columns:1fr}}
 /* === FIN GLOBAL BANK V24 === */
 
-<style>.app:before{display:none!important}.v24-global-home{position:fixed;left:14px;bottom:14px;z-index:140;height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6e4;background:#fff;color:#075046;font:800 11px Inter,Arial,sans-serif;box-shadow:0 10px 24px rgba(0,59,59,.12);display:none}.v24-global-home:hover{transform:translateY(-1px)}</style>
+<style>.app:before{display:none!important}.v24-global-home{position:fixed;left:14px;bottom:14px;z-index:140;height:38px;padding:0 14px;border-radius:999px;border:1px solid #dce6e4;background:#fff;color:#075046;font:800 11px Inter,Arial,sans-serif;box-shadow:0 10px 24px rgba(0,59,59,.12);display:none}.v24-global-home:hover{transform:translateY(-1px)}
+/* === GLOBAL BANK V25 — AUTHENTIFICATION EN POPUP === */
+#auth.auth.auth-modal{
+  display:none;
+  position:fixed!important;
+  inset:0!important;
+  z-index:1000!important;
+  min-height:100vh!important;
+  padding:22px!important;
+  background:rgba(1,28,29,.72)!important;
+  backdrop-filter:blur(10px)!important;
+  place-items:center!important;
+  overflow:auto!important;
+}
+#auth.auth.auth-modal:before,#auth.auth.auth-modal:after{display:none!important}
+#auth.auth.auth-modal .auth-ambient{display:none!important}
+#auth.auth.auth-modal .auth-shell{
+  width:min(560px,calc(100vw - 28px))!important;
+  max-height:calc(100vh - 36px)!important;
+  min-height:0!important;
+  display:block!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:28px!important;
+  background:#fff!important;
+  box-shadow:0 34px 100px rgba(0,0,0,.34)!important;
+  overflow:auto!important;
+  position:relative!important;
+}
+#auth.auth.auth-modal .auth-hero{display:none!important}
+#auth.auth.auth-modal .auth-card{
+  min-height:0!important;
+  width:100%!important;
+  padding:34px 34px 28px!important;
+  border-radius:28px!important;
+  border:1px solid rgba(231,173,47,.22)!important;
+  box-shadow:none!important;
+  display:block!important;
+  background:#fff!important;
+}
+#auth.auth.auth-modal .auth-card-inner{width:100%!important}
+#auth.auth.auth-modal .authLogo{width:64px!important;height:64px!important;border-radius:20px!important;margin-bottom:12px!important}
+#auth.auth.auth-modal .auth-panel-header h1{font-size:29px!important}
+#auth.auth.auth-modal .auth-register-grid{grid-template-columns:1fr 1fr!important}
+#auth.auth.auth-modal .auth-legal{color:#64748b!important;margin:18px 0 0!important;font-size:11px!important}
+#auth.auth.auth-modal .auth-legal .goldLink{color:#946c16!important}
+.auth-popup-close{
+  position:absolute;right:14px;top:14px;z-index:5;
+  width:40px;height:40px;border-radius:50%;border:1px solid #e2e8ea;
+  background:#fff;color:#26484d;font-size:24px;line-height:1;
+  display:grid;place-items:center;box-shadow:0 10px 22px rgba(15,23,42,.08);
+  transition:transform .15s ease,background .15s ease,color .15s ease;
+}
+.auth-popup-close:hover{transform:rotate(3deg) scale(1.04);background:#f6faf9;color:#003b3b}
+body.auth-popup-open{overflow:hidden!important}
+@media(max-width:640px){
+ #auth.auth.auth-modal{padding:10px!important;align-items:start!important}
+ #auth.auth.auth-modal .auth-shell{width:100%!important;max-height:calc(100vh - 20px)!important;border-radius:22px!important}
+ #auth.auth.auth-modal .auth-card{padding:28px 18px 22px!important;border-radius:22px!important}
+ #auth.auth.auth-modal .auth-register-grid{grid-template-columns:1fr!important}
+ .auth-popup-close{right:10px;top:10px}
+}
+/* === FIN POPUP AUTH V25 === */
+</style>
 
 </head>
 <body>
@@ -1625,9 +1688,9 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
 <footer id="contact" class="v24-footer"><div class="v24-wrap"><div class="v24-footer-grid"><div><a class="v24-brand v24-brand-footer" href="javascript:void(0)" onclick="showLanding()"><span class="v24-brand-mark">◎</span><strong>GLOBAL BANK</strong></a><p>Votre partenaire financier de confiance pour une gestion bancaire moderne, sécurisée et performante.</p></div><div><h4>Contact</h4><p>+2250777041790<br><a href="mailto:megaservicediabo@gmail.com">megaservicediabo@gmail.com</a><br>Abidjan, Côte d’Ivoire</p></div><div><h4>Informations</h4><p><a href="javascript:void(0)" onclick="openLegalModal('terms')">Mentions légales</a><br><a href="javascript:void(0)" onclick="openLegalModal('privacy')">Confidentialité</a></p></div></div><div class="v24-footer-bottom">© 2026 GLOBAL BANK — MEGA SERVICES SARL U</div></div></footer>
 </section>
 
-<section id="auth" class="auth">
+<section id="auth" class="auth auth-modal" onclick="handleAuthBackdrop(event)">
   <div class="auth-ambient" aria-hidden="true"></div>
-  <div class="auth-shell">
+  <div class="auth-shell" onclick="event.stopPropagation()"><button type="button" class="auth-popup-close" onclick="closeAuthPopup()" aria-label="Fermer">×</button>
     <section class="auth-hero" aria-label="Présentation de GLOBAL BANK">
       <div class="auth-hero-content">
         <div class="auth-brand-globe" aria-hidden="true">
@@ -6009,8 +6072,12 @@ function gestion(){
 
 function showLanding(){const l=$('landing'),a=$('auth'),app=$('app'),h=$('globalHomeBtn');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';if(h)h.style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
 function showAuth(){const l=$('landing'),a=$('auth'),app=$('app'),h=$('globalHomeBtn');if(l)l.style.display='none';if(a)a.style.display='grid';if(app)app.style.display='none';if(h)h.style.display='inline-flex';window.scrollTo({top:0,behavior:'smooth'});}
+function closeAuthPopup(){const a=$('auth');if(a)a.style.display='none';document.body.classList.remove('auth-popup-open');return false;}
+function handleAuthBackdrop(e){if(e&&e.target===$('auth'))closeAuthPopup();}
 function openAuthLogin(){showAuth();switchTab('login');clearLoginError();clearAuthInfo();setTimeout(()=>{const el=$('loginId');if(el)el.focus();},80);return false;}
 function openAuthRegister(){showAuth();switchTab('register');clearLoginError();clearAuthInfo();setTimeout(()=>{const el=$('bankName');if(el)el.focus();},80);return false;}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('auth')&&$('auth').style.display==='grid')closeAuthPopup();});
 function enhanceFastUi(){document.querySelectorAll('button,a,.btn,.mini').forEach(el=>{if(el.dataset.fastUiBound)return;el.dataset.fastUiBound='1';el.addEventListener('pointerdown',()=>el.classList.add('is-pressing'),{passive:true});['pointerup','pointercancel','mouseleave','blur'].forEach(evt=>el.addEventListener(evt,()=>el.classList.remove('is-pressing'),{passive:true}));});}
 
 checkStatus();load().then(openApp).catch(()=>{token='';showLanding()})

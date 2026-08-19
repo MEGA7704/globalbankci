@@ -4,6 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GLOBAL BANK - Cloudflare Pages D1 KV</title>
 
+<link rel="preload" as="image" href="/assets/landing-hero-dashboard.png">
 <style id="premium-dashboard-ui-v2">
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
 :root{--deep:#003b3b;--deep2:#00524d;--deep3:#012c2d;--gold:#e7ad2f;--gold2:#f6ca64;--ink:#052b31;--muted:#64748b;--line:#e7edf2;--green:#16a34a;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;--bg:#f6f8fb;--shadow:0 18px 45px rgba(15,23,42,.08)}
@@ -1539,15 +1540,51 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
 @media(max-width:780px){.landing-shell{width:min(100% - 24px,1380px)}.landing-nav-inner{min-height:74px;flex-wrap:wrap;padding:10px 0}.landing-nav-menu{order:3;justify-content:flex-start;width:100%;overflow:auto;padding-bottom:6px}.landing-nav-actions{margin-left:auto}.landing-section{padding:60px 0}.landing-hero h1{font-size:40px;letter-spacing:-1.5px}.landing-title{font-size:31px}.landing-services-grid,.landing-stats-grid,.landing-sol-cards,.landing-benefits-grid{grid-template-columns:1fr}.landing-benefit{border-right:0;border-bottom:1px solid rgba(255,255,255,.12)}.landing-benefit:last-child{border-bottom:0}.landing-team-visual{grid-template-columns:repeat(2,minmax(0,1fr))}.landing-footer-grid{grid-template-columns:1fr}.landing-cta-band{display:grid}.landing-dash-grid,.landing-mini-row{grid-template-columns:1fr}.landing-dashboard{grid-template-columns:1fr}.landing-dash-side{display:none}}
 /* === FIN PAGE D'ACCUEIL V22 === */
 
+/* === GLOBAL BANK V23 — ACCUEIL PREMIUM + BOUTON RETOUR ACCUEIL GLOBAL === */
+.logo,.landing-brand{cursor:pointer}
+.is-pressing{transform:scale(.985)!important}
+.global-home-fab{position:fixed;left:18px;bottom:18px;z-index:120;display:inline-flex;align-items:center;gap:10px;height:50px;padding:0 18px;border-radius:999px;background:linear-gradient(135deg,var(--deep),var(--deep2));color:#fff;border:1px solid rgba(255,255,255,.16);box-shadow:0 20px 38px rgba(0,59,59,.26);font-weight:900;text-decoration:none}
+.global-home-fab:hover{transform:translateY(-2px);box-shadow:0 24px 42px rgba(0,59,59,.30)}
+.global-home-fab .ico{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);font-size:14px}
+.landing-hero-grid{grid-template-columns:minmax(0,1fr) minmax(560px,.96fr)!important;gap:50px!important}
+.landing-hero h1{font-size:62px!important;max-width:720px!important}
+.landing-hero p{font-size:18px!important;max-width:690px!important}
+.landing-screen-card{padding:14px!important;border-radius:34px!important;background:linear-gradient(180deg,#ffffff 0%,#f6fbfb 100%)!important}
+.landing-screen-window{border-radius:28px!important;background:#fff!important}
+.landing-hero-shot{display:block;width:100%;height:auto;border-radius:28px}
+.landing-window-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid #edf2f4;background:#fbfdfd;color:#5d7176;font-size:13px;font-weight:800}
+.landing-window-caption b{color:var(--deep)}
+.landing-title{font-size:40px!important}
+.landing-subtitle{font-size:16px!important;margin-bottom:46px!important}
+.landing-service-card,.landing-solution-card{border-radius:26px!important;box-shadow:0 20px 44px rgba(15,23,42,.055)!important}
+.landing-service-card h3,.landing-solution-card h3{font-size:19px!important}
+.landing-benefits-band{border-radius:34px!important}
+.landing-stats{border-radius:34px!important}
+.landing-solutions-grid{grid-template-columns:minmax(0,.95fr) minmax(0,1fr)!important;align-items:start!important}
+.landing-team-card{padding:0!important;overflow:hidden!important}
+.landing-team-media{position:relative;min-height:560px;background:linear-gradient(180deg,#f0f6f5,#ffffff)}
+.landing-team-network{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.24}
+.landing-team-overlay{position:relative;z-index:1;padding:28px 28px 30px;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+.landing-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.landing-team-member{background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid #e6eef0;border-radius:24px;padding:18px;box-shadow:0 16px 34px rgba(15,23,42,.05)}
+.landing-team-member .avatar{width:78px;height:78px;border-radius:24px;display:grid;place-items:center;margin-bottom:12px;background:linear-gradient(145deg,#e3efed,#fff6df);font-size:34px}
+.landing-team-member b{display:block;color:var(--deep);font-size:16px}.landing-team-member span{display:block;margin-top:8px;color:#667a80;line-height:1.55;font-size:13px}
+.landing-footer-grid{grid-template-columns:1.1fr .9fr .8fr!important}
+@media(max-width:1220px){.landing-hero-grid,.landing-solutions-grid{grid-template-columns:1fr!important}.landing-team-media{min-height:500px}}
+@media(max-width:780px){.global-home-fab{left:12px;right:12px;bottom:12px;justify-content:center}.landing-hero h1{font-size:42px!important}.landing-team-grid{grid-template-columns:1fr}.landing-team-media{min-height:auto}}
+/* === FIN V23 === */
+
+
 </style>
 
 </head>
 <body>
+<a href="javascript:void(0)" class="global-home-fab" onclick="showLanding();return false;" aria-label="Retour à l'accueil"><span class="ico">🏠</span><span>Retour à l'accueil</span></a>
 
 <section id="landing" class="landing">
   <header class="landing-nav">
     <div class="landing-shell landing-nav-inner">
-      <a href="#landing" class="landing-brand"><span class="landing-brand-mark">🌐</span><span>GLOBAL BANK</span></a>
+      <a href="javascript:void(0)" class="landing-brand" onclick="showLanding()"><span class="landing-brand-mark">🌐</span><span>GLOBAL BANK</span></a>
       <nav class="landing-nav-menu" aria-label="Navigation principale">
         <a href="#landing">Accueil</a>
         <a href="#contact">Contact</a>
@@ -1577,45 +1614,9 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
       <div class="landing-screen-wrap">
         <div class="landing-screen-card">
           <div class="landing-screen-window">
-            <div class="landing-window-top"><div class="landing-window-dots"><span></span><span></span><span></span></div><div class="landing-window-title">Tableau de bord GLOBAL BANK</div></div>
-            <div class="landing-dashboard">
-              <aside class="landing-dash-side">
-                <b>GLOBAL BANK</b>
-                <small class="active">Tableau de bord</small>
-                <small>Comptes</small>
-                <small>Virements</small>
-                <small>Paiements</small>
-                <small>Historique</small>
-                <small>Rapports</small>
-              </aside>
-              <div class="landing-dash-main">
-                <div class="landing-dash-header">
-                  <h3>Solde total</h3>
-                  <div class="landing-dash-user"><div class="landing-dash-avatar">GB</div></div>
-                </div>
-                <div class="landing-dash-grid">
-                  <div class="landing-metric-card">
-                    <h4>Solde disponible</h4>
-                    <div class="landing-metric-value">2 450 000 FCFA</div>
-                    <div class="landing-spark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                  </div>
-                  <div class="landing-mini-row">
-                    <div class="landing-mini-card"><h4>Comptes</h4><strong>145</strong></div>
-                    <div class="landing-mini-card"><h4>Virements</h4><strong>32</strong></div>
-                    <div class="landing-mini-card"><h4>Paiements</h4><strong>18</strong></div>
-                    <div class="landing-mini-card"><h4>Historique</h4><strong>286</strong></div>
-                  </div>
-                </div>
-                <div class="landing-history-card" style="margin-top:14px">
-                  <h4>Derniers mouvements</h4>
-                  <div class="landing-history-list">
-                    <div class="landing-history-item"><div><b>Virement reçu</b><small>Aujourd’hui</small></div><span class="plus">+ 250 000</span></div>
-                    <div class="landing-history-item"><div><b>Paiement fournisseur</b><small>Hier</small></div><span class="minus">- 85 000</span></div>
-                    <div class="landing-history-item"><div><b>Dépôt entreprise</b><small>Hier</small></div><span class="plus">+ 480 000</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div class="landing-window-top"><div class="landing-window-dots"><span></span><span></span><span></span></div><div class="landing-window-title">Aperçu du tableau de bord GLOBAL BANK</div></div>
+            <img class="landing-hero-shot" src="/assets/landing-hero-dashboard.png" alt="Ordinateur portable affichant le tableau de bord bancaire GLOBAL BANK">
+            <div class="landing-window-caption"><span>Comptes • Virements • Paiements • Historique</span><b>Graphique d'évolution en temps réel</b></div>
           </div>
         </div>
       </div>
@@ -1673,14 +1674,21 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
       <p class="landing-subtitle">Des services évolutifs pour particuliers, entreprises et établissements en quête d’une gestion fiable et moderne.</p>
       <div class="landing-solutions-grid">
         <div class="landing-team-card">
-          <div class="landing-team-badge"><span></span> Équipe professionnelle africaine</div>
-          <h3>Une équipe engagée à vos côtés</h3>
-          <p>GLOBAL BANK accompagne la croissance des particuliers et des entreprises grâce à une approche professionnelle, humaine et orientée résultats.</p>
-          <div class="landing-team-visual">
-            <article class="landing-person"><div class="landing-person-photo">👩🏾</div><b>Conseil client</b><span>Accompagnement personnalisé et proximité.</span></article>
-            <article class="landing-person"><div class="landing-person-photo">👨🏾‍💼</div><b>Gestion entreprise</b><span>Solutions pensées pour les structures professionnelles.</span></article>
-            <article class="landing-person"><div class="landing-person-photo">👩🏾‍💼</div><b>Crédit & suivi</b><span>Une gestion rigoureuse de vos projets de financement.</span></article>
-            <article class="landing-person"><div class="landing-person-photo">👨🏾</div><b>Support & écoute</b><span>Disponibilité, confiance et réactivité.</span></article>
+          <div class="landing-team-media">
+            <img class="landing-team-network" src="/assets/global-bank-network.svg" alt="Illustration du réseau GLOBAL BANK">
+            <div class="landing-team-overlay">
+              <div>
+                <div class="landing-team-badge"><span></span> Équipe africaine professionnelle</div>
+                <h3>Une équipe sérieuse, proche de vos ambitions</h3>
+                <p>GLOBAL BANK met l’accent sur la confiance, l’expertise et l’accompagnement professionnel pour offrir aux particuliers et aux entreprises des solutions bancaires adaptées.</p>
+              </div>
+              <div class="landing-team-grid">
+                <article class="landing-team-member"><div class="avatar">👩🏾‍💼</div><b>Conseillère clientèle</b><span>Accueil personnalisé, écoute et suivi de qualité pour chaque client.</span></article>
+                <article class="landing-team-member"><div class="avatar">👨🏾‍💼</div><b>Gestionnaire entreprise</b><span>Des solutions structurées pour accompagner l’activité et la croissance.</span></article>
+                <article class="landing-team-member"><div class="avatar">👩🏾</div><b>Experte crédit</b><span>Analyse, accompagnement et suivi fiable des financements et remboursements.</span></article>
+                <article class="landing-team-member"><div class="avatar">👨🏾</div><b>Support professionnel</b><span>Une assistance réactive et continue pour faciliter l’expérience bancaire.</span></article>
+              </div>
+            </div>
           </div>
         </div>
         <div class="landing-sol-cards">
@@ -1709,7 +1717,7 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
     <div class="landing-shell">
       <div class="landing-footer-grid">
         <div>
-          <a href="#landing" class="landing-brand" style="color:#fff"><span class="landing-brand-mark">🌐</span><span>GLOBAL BANK</span></a>
+          <a href="javascript:void(0)" class="landing-brand" style="color:#fff" onclick="showLanding()"><span class="landing-brand-mark">🌐</span><span>GLOBAL BANK</span></a>
           <p>GLOBAL BANK est une plateforme bancaire professionnelle pensée pour offrir une expérience moderne, rassurante et performante aux particuliers et aux entreprises.</p>
         </div>
         <div>
@@ -1839,7 +1847,7 @@ a,button,[role="button"],.btn,.mini,.logoutProfile,.menu button,.landing-cta-btn
   </div>
   <button type="button" class="whatsapp-float" title="Contacter l’assistance WhatsApp" onclick="openWhatsappContact()">☎</button>
 </section>
-<section id="app" class="app"><header class="topbar"><div class="logo"><div class="ico">🏛️</div><div>GLOBAL<br><span>BANK</span></div></div><button type="button" id="mobileMenuToggle" class="mobileMenuToggle" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu"><span class="hamb">☰</span><span class="txt">Menu</span></button><nav id="menu" class="menu"></nav><div class="profile"><div class="searchIcon">🔎</div><button class="bell bellLink" title="Notifications" onclick="return goPage('notifications')">🔔</button><div class="userBlock"><b id="profileName">Admin Banque</b><small id="profileRole">Administrateur</small></div><button class="logoutProfile" onclick="logout()" title="Se déconnecter">↪ Déconnexion</button></div></header><main id="main" class="main"></main></section><div id="toast" class="toast hidden"></div>
+<section id="app" class="app"><header class="topbar"><div class="logo" onclick="showLanding()" title="Retour à l'accueil"><div class="ico">🏛️</div><div>GLOBAL<br><span>BANK</span></div></div><button type="button" id="mobileMenuToggle" class="mobileMenuToggle" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu"><span class="hamb">☰</span><span class="txt">Menu</span></button><nav id="menu" class="menu"></nav><div class="profile"><div class="searchIcon">🔎</div><button class="bell bellLink" title="Notifications" onclick="return goPage('notifications')">🔔</button><div class="userBlock"><b id="profileName">Admin Banque</b><small id="profileRole">Administrateur</small></div><button class="logoutProfile" onclick="logout()" title="Se déconnecter">↪ Déconnexion</button></div></header><main id="main" class="main"></main></section><div id="toast" class="toast hidden"></div>
 <script>
 
 

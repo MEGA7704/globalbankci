@@ -1719,6 +1719,24 @@ button,a,.btn,.mini,.menu button{touch-action:manipulation;-webkit-tap-highlight
 @media(max-width:900px){#app .topbar .menu{background:linear-gradient(145deg,#002625,#00443f)!important;border-color:rgba(231,173,47,.24)!important}#app .topbar .menu button{background:rgba(255,255,255,.06)!important;color:#fff!important}.landing-connected-menu{top:72px}.landing-connected-inner{width:calc(100% - 18px);display:grid;grid-template-columns:1fr auto;gap:4px;padding:7px 0}.landing-connected-label{border-right:0;padding-right:0}.landing-user-menu{grid-column:1/-1;grid-row:2}.landing-connected-profile{grid-column:2;grid-row:1;border-left:0;padding-left:0}}
 /* === FIN V27 === */
 
+/* === GLOBAL BANK V28 — MENU UNIQUE ACCUEIL CONNECTE / VISITEUR === */
+.v24-nav{background:#fff!important;box-shadow:0 8px 22px rgba(10,35,35,.05)!important}
+.v24-nav-inner{justify-content:flex-start!important}
+.v24-nav-inner>nav,.v24-nav-actions{display:none!important}
+.landing-connected-menu{display:block!important;position:sticky!important;top:76px!important;z-index:94!important;background:linear-gradient(110deg,#001719 0%,#002d2c 25%,#00433d 53%,#005348 72%,#001719 100%)!important;border-top:1px solid rgba(231,173,47,.22)!important;border-bottom:1px solid rgba(231,173,47,.32)!important;box-shadow:0 14px 34px rgba(0,20,21,.28)!important}
+.landing-connected-menu.hidden{display:block!important}
+.landing-connected-inner{width:min(1480px,calc(100% - 32px))!important;margin:0 auto!important;display:block!important;min-height:60px!important;padding:0!important}
+.landing-connected-label,.landing-connected-profile{display:none!important}
+.landing-user-menu{display:flex!important;align-items:center!important;gap:7px!important;overflow-x:auto!important;overflow-y:hidden!important;width:100%!important;padding:10px 2px!important;scrollbar-width:thin!important}
+.landing-user-menu button{height:40px!important;padding:0 14px!important;border-radius:10px!important;background:rgba(255,255,255,.055)!important;color:#f0faf8!important;border:1px solid rgba(255,255,255,.09)!important;font-size:11.5px!important;font-weight:850!important;white-space:nowrap!important;box-shadow:none!important;transition:background .08s ease,color .08s ease,transform .08s ease!important}
+.landing-user-menu button:hover{background:rgba(255,255,255,.12)!important;color:#ffd66d!important}
+.landing-user-menu .home-active{background:linear-gradient(135deg,#d3a33b,#efc762)!important;color:#17201e!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(0,0,0,.18)!important}
+.landing-user-menu .landing-auth-primary{background:linear-gradient(135deg,#d3a33b,#efc762)!important;color:#17201e!important;border-color:transparent!important;margin-left:auto!important}
+.landing-user-menu .landing-logout-btn{background:rgba(231,173,47,.13)!important;color:#ffe292!important;border-color:rgba(231,173,47,.28)!important;margin-left:auto!important}
+@media(max-width:900px){.landing-connected-menu{top:72px!important}.landing-connected-inner{width:calc(100% - 16px)!important;display:block!important;padding:0!important}.landing-user-menu{grid-column:auto!important;grid-row:auto!important;padding:8px 0!important}.landing-user-menu .landing-auth-primary,.landing-user-menu .landing-logout-btn{margin-left:0!important}}
+/* === FIN V28 === */
+
+
 
 </style>
 
@@ -1731,10 +1749,9 @@ button,a,.btn,.mini,.menu button{touch-action:manipulation;-webkit-tap-highlight
 <section id="landing" class="v24-home">
 <header class="v24-nav"><div class="v24-wrap v24-nav-inner">
 <a class="v24-brand" href="javascript:void(0)" onclick="showLanding()"><span class="v24-brand-mark">◎</span><strong>GLOBAL BANK</strong></a>
-<nav><a href="#landing">Accueil</a><a href="#contact">Contact</a></nav>
-<div class="v24-nav-actions" id="landingNavActions"><span class="v24-connected-badge" id="landingConnectedBadge">Connecté</span><button class="v24-btn v24-btn-light v24-auth-action" type="button" onclick="openAuthLogin()"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path></svg><span>Se connecter</span></button><button class="v24-btn v24-btn-dark v24-auth-action" type="button" onclick="openAuthRegister()">Créer ma banque <span>→</span></button></div>
+
 </div></header>
-<div id="landingConnectedMenu" class="landing-connected-menu hidden"><div class="landing-connected-inner"><div class="landing-connected-label">ESPACE CONNECTÉ <b id="landingConnectedRole">Utilisateur</b></div><nav id="landingUserMenu" class="landing-user-menu"></nav><div class="landing-connected-profile"><span id="landingConnectedName">Utilisateur</span><button type="button" onclick="logout()">Déconnexion</button></div></div></div>
+<div id="landingConnectedMenu" class="landing-connected-menu"><div class="landing-connected-inner"><nav id="landingUserMenu" class="landing-user-menu" aria-label="Menu GLOBAL BANK"></nav></div></div>
 <main>
 <section class="v24-hero"><div class="v24-wrap v24-hero-grid"><div class="v24-hero-copy">
 <span class="v24-kicker">Votre banque, votre performance</span>
@@ -6148,7 +6165,7 @@ function gestion(){
 
 function restorePageScroll(){document.body.classList.remove('auth-popup-open');if(!document.getElementById('proModalBackdrop'))document.body.classList.remove('modal-open');document.documentElement.style.overflow='';document.body.style.overflow='';document.documentElement.style.overflowY='auto';document.body.style.overflowY='auto';}
 function isSessionConnected(){return !!(data&&role);}
-function renderLandingConnectedMenu(){const bar=$('landingConnectedMenu'),nav=$('landingUserMenu'),actions=$('landingNavActions'),badge=$('landingConnectedBadge');if(!bar||!nav)return;const connected=isSessionConnected();bar.classList.toggle('hidden',!connected);if(actions)actions.classList.toggle('is-connected',connected);if(!connected){nav.innerHTML='';return;}const arr=allowedPagesForRole().filter(k=>k!=='logout');const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));nav.innerHTML='<button class="home-active" type="button" onclick="showLanding();return false;">Accueil</button>'+visible.map(k=>'<button type="button" onclick="return goPageFromLanding(\''+k+'\')">'+escapeHtml(menuLabelForRole(k))+'</button>').join('');const rn=$('landingConnectedRole'),un=$('landingConnectedName');if(rn)rn.textContent=currentRoleLabel();if(un)un.textContent=(data&&data.user&&data.user.name)||(data&&data.bank&&data.bank.manager)||'Utilisateur';if(badge)badge.textContent='Connecté · '+currentRoleLabel();}
+function renderLandingConnectedMenu(){const bar=$('landingConnectedMenu'),nav=$('landingUserMenu');if(!bar||!nav)return;const connected=isSessionConnected();bar.classList.remove('hidden');if(!connected){nav.innerHTML='<button class="home-active" type="button" onclick="showLanding();return false;">Accueil</button><button type="button" onclick="openAuthLogin();return false;">Se connecter</button><button class="landing-auth-primary" type="button" onclick="openAuthRegister();return false;">Créer ma banque</button>';return;}const arr=allowedPagesForRole();const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>k!=='logout'&&!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));nav.innerHTML='<button class="home-active" type="button" onclick="showLanding();return false;">Accueil</button>'+visible.map(k=>'<button type="button" onclick="return goPageFromLanding(\''+k+'\')">'+escapeHtml(menuLabelForRole(k))+'</button>').join('')+'<button class="landing-logout-btn" type="button" onclick="logout();return false;">Déconnexion</button>';}
 function goPageFromLanding(page){if(!isSessionConnected()){renderLandingConnectedMenu();showLanding();return false;}const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='none';if(a)a.style.display='none';if(app)app.style.display='block';restorePageScroll();applyRoleShell();if(hasPageAccess(page))active=page;else active=allowedPagesForRole().find(x=>x!=='logout')||'dashboard';renderMenu();render();closeMobileMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
 function showLanding(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';restorePageScroll();renderLandingConnectedMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
 function showAuth(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(app)app.style.display='none';if(a)a.style.display='grid';document.body.classList.add('auth-popup-open');}

@@ -1645,6 +1645,45 @@ body.auth-popup-open{overflow:hidden!important}
  .auth-popup-close{right:10px;top:10px}
 }
 /* === FIN POPUP AUTH V25 === */
+/* === GLOBAL BANK V26 — CORRECTION POPUP + BANNIÈRE UTILISATEURS === */
+#app .topbar{
+  min-height:76px!important;height:auto!important;position:sticky!important;top:0!important;z-index:90!important;
+  background:rgba(255,255,255,.97)!important;backdrop-filter:blur(16px)!important;
+  border-bottom:1px solid #e8eeee!important;box-shadow:0 8px 24px rgba(15,42,41,.055)!important;
+  color:#073c38!important;padding:0 26px!important;gap:16px!important;flex-wrap:nowrap!important;
+}
+#app .topbar .logo{min-width:220px!important;flex:0 0 220px!important;display:flex!important;align-items:center!important;gap:10px!important;color:#073c38!important;font-family:Cinzel,Georgia,serif!important;font-size:18px!important;line-height:1.05!important;letter-spacing:.4px!important}
+#app .topbar .logo .ico{width:42px!important;height:42px!important;border:1.5px solid #d2a642!important;border-radius:50%!important;display:grid!important;place-items:center!important;font-size:0!important;filter:none!important;background:#fff!important}
+#app .topbar .logo .ico:after{content:'◎';font-size:27px!important;color:#c49426!important;font-family:Georgia,serif!important}
+#app .topbar .logo span{color:#073c38!important;font-weight:800!important}
+#app .topbar .menu{height:76px!important;min-height:76px!important;display:flex!important;align-items:center!important;gap:4px!important;flex:1 1 auto!important;overflow-x:auto!important;overflow-y:hidden!important;padding:0 4px!important;flex-wrap:nowrap!important}
+#app .topbar .menu button{height:44px!important;min-height:44px!important;padding:0 11px!important;border-radius:11px!important;background:transparent!important;color:#30464a!important;font-size:11.5px!important;font-weight:800!important;white-space:nowrap!important;border:1px solid transparent!important;transition:background .14s ease,color .14s ease,border-color .14s ease!important}
+#app .topbar .menu button:hover{background:#f3f8f7!important;color:#003b3b!important;border-color:#e0e9e8!important}
+#app .topbar .menu button.active{background:#edf6f4!important;color:#003b3b!important;border-color:#dbe8e5!important}
+#app .topbar .menu button.active:after{display:none!important}
+#app .topbar .menu .app-home-menu{background:linear-gradient(135deg,#003b3b,#00544d)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(0,59,59,.12)!important}
+#app .topbar .menu .app-home-menu:hover{background:linear-gradient(135deg,#004846,#006057)!important;color:#fff!important}
+#app .topbar .profile{flex:0 0 auto!important;border-left:1px solid #e0e7e7!important;padding-left:14px!important;margin-left:0!important;gap:8px!important;color:#073c38!important}
+#app .topbar .searchIcon{display:none!important}
+#app .topbar .bellLink{color:#073c38!important;background:#f6f9f9!important;border:1px solid #e3eaea!important}
+#app .topbar .bellLink:hover{background:#edf5f3!important;color:#003b3b!important}
+#app .topbar .userBlock b{color:#073c38!important;font-size:11.5px!important}
+#app .topbar .userBlock small{color:#718184!important;font-size:9.8px!important}
+#app .topbar .logoutProfile{background:#fff!important;color:#073c38!important;border:1px solid #dce5e5!important;border-radius:10px!important;font-size:10px!important;padding:8px 10px!important}
+#app .topbar .logoutProfile:hover{background:#fff8e7!important;color:#6d4c0c!important;border-color:#e8d29c!important;box-shadow:none!important}
+#globalHomeBtn{display:none!important}
+@media(max-width:900px){
+ #app .topbar{display:grid!important;grid-template-columns:1fr auto!important;padding:10px 12px!important;gap:8px!important;min-height:auto!important}
+ #app .topbar .logo{min-width:0!important;flex:initial!important}
+ #app .topbar .mobileMenuToggle{display:flex!important;color:#073c38!important;background:#f4f8f7!important;border:1px solid #dfe8e6!important}
+ #app .topbar .menu{grid-column:1/-1!important;display:none!important;height:auto!important;min-height:0!important;max-height:65vh!important;flex-direction:column!important;align-items:stretch!important;background:#fff!important;border:1px solid #e2e9e9!important;border-radius:16px!important;padding:10px!important;box-shadow:0 18px 42px rgba(15,42,41,.12)!important}
+ #app .topbar.menu-open .menu{display:flex!important}
+ #app .topbar .menu button{width:100%!important;text-align:left!important;justify-content:flex-start!important;background:#f9fbfb!important;color:#30464a!important}
+ #app .topbar .menu .app-home-menu{background:linear-gradient(135deg,#003b3b,#00544d)!important;color:#fff!important}
+ #app .topbar .profile{grid-column:1/-1!important;border-left:0!important;border-top:1px solid #e7eded!important;padding:9px 0 0!important;justify-content:flex-end!important}
+}
+/* === FIN V26 === */
+
 </style>
 
 </head>
@@ -1862,7 +1901,7 @@ function goPage(page){
  if(!hasPageAccess(page)){active=page;renderMenu();renderAccessDenied(page);logRoleAction('Accès refusé',labels[page]||page,'refusé','Page interdite au rôle '+currentRoleLabel());closeMobileMenu();return false;}
  active=page;renderMenu();render();closeMobileMenu();return false;
 }
-function renderMenu(){const arr=allowedPagesForRole();const m=$('menu');if(!m)return;const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));m.innerHTML=visible.map(k=>k==='logout'?`<button onclick="logout()">${menuLabelForRole(k)}</button>`:`<button class="${active===k?'active':''}" onclick="return goPage('${k}')">${menuLabelForRole(k)}</button>`).join('');const bell=document.querySelector('.bellLink');if(bell)bell.classList.toggle('hidden',!arr.includes('notifications')&&!arr.includes('mailbox'));}
+function renderMenu(){const arr=allowedPagesForRole();const m=$('menu');if(!m)return;const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));m.innerHTML=`<button class="app-home-menu" onclick="showLanding();return false;">Accueil</button>`+visible.map(k=>k==='logout'?`<button onclick="logout()">${menuLabelForRole(k)}</button>`:`<button class="${active===k?'active':''}" onclick="return goPage('${k}')">${menuLabelForRole(k)}</button>`).join('');const bell=document.querySelector('.bellLink');if(bell)bell.classList.toggle('hidden',!arr.includes('notifications')&&!arr.includes('mailbox'));}
 function renderAccessDenied(page){const main=$('main');if(main)main.innerHTML=`<section class="accessDenied"><h2>⛔ Accès refusé</h2><p>Accès refusé. Vous n’avez pas l’autorisation d’ouvrir cette section.</p><p><b>Rôle :</b> ${escapeHtml(currentRoleLabel())}</p><button class="btn" onclick="goPage('dashboard')">Retour au tableau de bord</button></section>`;}
 
 
@@ -6070,9 +6109,9 @@ function gestion(){
 /* === FIN SECTION GESTION ANNUELLE / MENSUELLE ADMINISTRATEUR === */
 
 
-function showLanding(){const l=$('landing'),a=$('auth'),app=$('app'),h=$('globalHomeBtn');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';if(h)h.style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
-function showAuth(){const l=$('landing'),a=$('auth'),app=$('app'),h=$('globalHomeBtn');if(l)l.style.display='none';if(a)a.style.display='grid';if(app)app.style.display='none';if(h)h.style.display='inline-flex';window.scrollTo({top:0,behavior:'smooth'});}
-function closeAuthPopup(){const a=$('auth');if(a)a.style.display='none';document.body.classList.remove('auth-popup-open');return false;}
+function showLanding(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';document.body.classList.remove('auth-popup-open');window.scrollTo({top:0,behavior:'smooth'});}
+function showAuth(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(app)app.style.display='none';if(a)a.style.display='grid';document.body.classList.add('auth-popup-open');}
+function closeAuthPopup(){const a=$('auth'),l=$('landing'),app=$('app');if(a)a.style.display='none';document.body.classList.remove('auth-popup-open');if(!app||app.style.display!=='block'){if(l)l.style.display='block';}return false;}
 function handleAuthBackdrop(e){if(e&&e.target===$('auth'))closeAuthPopup();}
 function openAuthLogin(){showAuth();switchTab('login');clearLoginError();clearAuthInfo();setTimeout(()=>{const el=$('loginId');if(el)el.focus();},80);return false;}
 function openAuthRegister(){showAuth();switchTab('register');clearLoginError();clearAuthInfo();setTimeout(()=>{const el=$('bankName');if(el)el.focus();},80);return false;}

@@ -1684,6 +1684,42 @@ body.auth-popup-open{overflow:hidden!important}
 }
 /* === FIN V26 === */
 
+/* === GLOBAL BANK V27 — MENUS PERSISTANTS + BANNIERE VERT NOIR + SCROLL + RAPIDITE === */
+html{overflow-y:auto;scroll-behavior:auto}
+body{min-height:100%;overflow-y:auto;overscroll-behavior-y:auto}
+body:not(.auth-popup-open):not(.modal-open){overflow-y:auto!important;overflow-x:hidden!important}
+button,a,.btn,.mini,.menu button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#app .topbar{background:linear-gradient(112deg,#001c1e 0%,#003b38 36%,#005047 66%,#001b1c 100%)!important;color:#fff!important;border-bottom:1px solid rgba(231,173,47,.28)!important;box-shadow:0 12px 34px rgba(0,21,22,.32),0 2px 0 rgba(231,173,47,.10)!important;backdrop-filter:blur(14px) saturate(120%)!important}
+#app .topbar .logo,#app .topbar .logo span,#app .topbar .userBlock b{color:#fff!important}
+#app .topbar .logo .ico{background:rgba(255,255,255,.06)!important;border-color:#d3a53c!important}
+#app .topbar .menu button{color:#e6f3f0!important;border-color:transparent!important;transition:background .08s ease,color .08s ease,transform .08s ease!important}
+#app .topbar .menu button:hover,#app .topbar .menu button.active{background:rgba(255,255,255,.10)!important;color:#ffd66d!important;border-color:rgba(255,255,255,.11)!important}
+#app .topbar .menu .app-home-menu{background:linear-gradient(135deg,#d3a33b,#efc762)!important;color:#17201e!important;box-shadow:0 8px 18px rgba(0,0,0,.20)!important}
+#app .topbar .profile{border-left-color:rgba(255,255,255,.16)!important;color:#fff!important}
+#app .topbar .userBlock small{color:#b9ceca!important}
+#app .topbar .bellLink,#app .topbar .logoutProfile{background:rgba(255,255,255,.08)!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important}
+#app .topbar .bellLink:hover,#app .topbar .logoutProfile:hover{background:rgba(231,173,47,.18)!important;color:#ffd66d!important;border-color:rgba(231,173,47,.35)!important}
+.landing-connected-menu{position:sticky;top:72px;z-index:94;background:linear-gradient(110deg,#00191b 0%,#003d39 48%,#005048 72%,#00191b 100%);border-top:1px solid rgba(231,173,47,.20);border-bottom:1px solid rgba(231,173,47,.28);box-shadow:0 12px 32px rgba(0,22,23,.25);color:#fff}
+.landing-connected-menu.hidden{display:none!important}
+.landing-connected-inner{width:min(1480px,calc(100% - 32px));margin:0 auto;display:flex;align-items:center;gap:10px;min-height:62px}
+.landing-connected-label{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding-right:12px;border-right:1px solid rgba(255,255,255,.13);font-size:11px;color:#c8dcd8;font-weight:800;white-space:nowrap}
+.landing-connected-label b{color:#ffd66d;font-size:12px}
+.landing-user-menu{display:flex;align-items:center;gap:5px;overflow-x:auto;overflow-y:hidden;flex:1;scrollbar-width:thin;padding:8px 2px}
+.landing-user-menu button{height:40px;padding:0 12px;border-radius:10px;background:rgba(255,255,255,.055);color:#edf8f5;border:1px solid rgba(255,255,255,.08);font-size:11px;font-weight:850;white-space:nowrap;transition:background .08s ease,color .08s ease,transform .08s ease}
+.landing-user-menu button:hover{background:rgba(255,255,255,.12);color:#ffd66d}
+.landing-user-menu .home-active{background:linear-gradient(135deg,#d3a33b,#efc762);color:#18201f;border-color:transparent}
+.landing-connected-profile{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding-left:10px;border-left:1px solid rgba(255,255,255,.13)}
+.landing-connected-profile span{font-size:10px;color:#c2d5d1;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.landing-connected-profile button{height:36px;border-radius:9px;padding:0 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:10px;font-weight:850}
+.v24-nav-actions.is-connected .v24-auth-action{display:none!important}
+.v24-nav-actions .v24-connected-badge{display:none}
+.v24-nav-actions.is-connected .v24-connected-badge{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 13px;border-radius:999px;background:#eef8f5;border:1px solid #dbeae5;color:#075046;font-size:11px;font-weight:850}
+#main,.app,.main{overflow:visible!important}
+.is-pressing{transform:scale(.99)!important}
+@media(max-width:900px){#app .topbar .menu{background:linear-gradient(145deg,#002625,#00443f)!important;border-color:rgba(231,173,47,.24)!important}#app .topbar .menu button{background:rgba(255,255,255,.06)!important;color:#fff!important}.landing-connected-menu{top:72px}.landing-connected-inner{width:calc(100% - 18px);display:grid;grid-template-columns:1fr auto;gap:4px;padding:7px 0}.landing-connected-label{border-right:0;padding-right:0}.landing-user-menu{grid-column:1/-1;grid-row:2}.landing-connected-profile{grid-column:2;grid-row:1;border-left:0;padding-left:0}}
+/* === FIN V27 === */
+
+
 </style>
 
 </head>
@@ -1696,8 +1732,9 @@ body.auth-popup-open{overflow:hidden!important}
 <header class="v24-nav"><div class="v24-wrap v24-nav-inner">
 <a class="v24-brand" href="javascript:void(0)" onclick="showLanding()"><span class="v24-brand-mark">◎</span><strong>GLOBAL BANK</strong></a>
 <nav><a href="#landing">Accueil</a><a href="#contact">Contact</a></nav>
-<div class="v24-nav-actions"><button class="v24-btn v24-btn-light" type="button" onclick="openAuthLogin()"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path></svg><span>Se connecter</span></button><button class="v24-btn v24-btn-dark" type="button" onclick="openAuthRegister()">Créer ma banque <span>→</span></button></div>
+<div class="v24-nav-actions" id="landingNavActions"><span class="v24-connected-badge" id="landingConnectedBadge">Connecté</span><button class="v24-btn v24-btn-light v24-auth-action" type="button" onclick="openAuthLogin()"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path></svg><span>Se connecter</span></button><button class="v24-btn v24-btn-dark v24-auth-action" type="button" onclick="openAuthRegister()">Créer ma banque <span>→</span></button></div>
 </div></header>
+<div id="landingConnectedMenu" class="landing-connected-menu hidden"><div class="landing-connected-inner"><div class="landing-connected-label">ESPACE CONNECTÉ <b id="landingConnectedRole">Utilisateur</b></div><nav id="landingUserMenu" class="landing-user-menu"></nav><div class="landing-connected-profile"><span id="landingConnectedName">Utilisateur</span><button type="button" onclick="logout()">Déconnexion</button></div></div></div>
 <main>
 <section class="v24-hero"><div class="v24-wrap v24-hero-grid"><div class="v24-hero-copy">
 <span class="v24-kicker">Votre banque, votre performance</span>
@@ -1899,7 +1936,7 @@ function goPage(page){
  if(window.currentCreditDetailId){window.currentCreditDetailId=null;window.creditDetailReturnPage='';window.creditDetailReturnList=false;}
  if(window.creditAgentListOpen)window.creditAgentListOpen=false;
  if(!hasPageAccess(page)){active=page;renderMenu();renderAccessDenied(page);logRoleAction('Accès refusé',labels[page]||page,'refusé','Page interdite au rôle '+currentRoleLabel());closeMobileMenu();return false;}
- active=page;renderMenu();render();closeMobileMenu();return false;
+ active=page;renderMenu();render();closeMobileMenu();restorePageScroll();requestAnimationFrame(()=>window.scrollTo(0,0));return false;
 }
 function renderMenu(){const arr=allowedPagesForRole();const m=$('menu');if(!m)return;const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));m.innerHTML=`<button class="app-home-menu" onclick="showLanding();return false;">Accueil</button>`+visible.map(k=>k==='logout'?`<button onclick="logout()">${menuLabelForRole(k)}</button>`:`<button class="${active===k?'active':''}" onclick="return goPage('${k}')">${menuLabelForRole(k)}</button>`).join('');const bell=document.querySelector('.bellLink');if(bell)bell.classList.toggle('hidden',!arr.includes('notifications')&&!arr.includes('mailbox'));}
 function renderAccessDenied(page){const main=$('main');if(main)main.innerHTML=`<section class="accessDenied"><h2>⛔ Accès refusé</h2><p>Accès refusé. Vous n’avez pas l’autorisation d’ouvrir cette section.</p><p><b>Rôle :</b> ${escapeHtml(currentRoleLabel())}</p><button class="btn" onclick="goPage('dashboard')">Retour au tableau de bord</button></section>`;}
@@ -2144,8 +2181,8 @@ function applyRoleShell(){
   if(profileIcon)profileIcon.textContent='🔎';
  }
 }
-function openApp(){const landing=$('landing'),auth=$('auth'),app=$('app'),h=$('globalHomeBtn');if(landing)landing.style.display='none';if(auth)auth.style.display='none';if(app)app.style.display='block';if(h)h.style.display='inline-flex';active=allowedPagesForRole()[0]||'dashboard';applyRoleShell();renderMenu();render();setupFreeVersionReminder();window.scrollTo({top:0,behavior:'smooth'})}
-async function logout(){try{await api('/logout',{})}catch{}if(__freeVersionReminderTimer)clearInterval(__freeVersionReminderTimer);__freeVersionReminderTimer=null;token='';data=null;role=null;mailboxState={items:[],loaded:false,loading:false,error:'',filter:'all',search:''};showLanding()}function bank(){return data.bank||{}}
+function openApp(){const landing=$('landing'),auth=$('auth'),app=$('app'),h=$('globalHomeBtn');if(landing)landing.style.display='none';if(auth)auth.style.display='none';if(app)app.style.display='block';if(h)h.style.display='inline-flex';restorePageScroll();active=allowedPagesForRole()[0]||'dashboard';applyRoleShell();renderMenu();renderLandingConnectedMenu();render();setupFreeVersionReminder();requestAnimationFrame(()=>window.scrollTo(0,0));}
+async function logout(){try{await api('/logout',{})}catch{}if(__freeVersionReminderTimer)clearInterval(__freeVersionReminderTimer);__freeVersionReminderTimer=null;token='';data=null;role=null;mailboxState={items:[],loaded:false,loading:false,error:'',filter:'all',search:''};renderLandingConnectedMenu();showLanding()}function bank(){return data.bank||{}}
 function bankDisplayName(){let b=bank();let n=String((b&&b.name)||'').trim();return n||'Banque'}
 
 function bankProfile(){return bank()||{}}
@@ -6109,15 +6146,19 @@ function gestion(){
 /* === FIN SECTION GESTION ANNUELLE / MENSUELLE ADMINISTRATEUR === */
 
 
-function showLanding(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';document.body.classList.remove('auth-popup-open');window.scrollTo({top:0,behavior:'smooth'});}
+function restorePageScroll(){document.body.classList.remove('auth-popup-open');if(!document.getElementById('proModalBackdrop'))document.body.classList.remove('modal-open');document.documentElement.style.overflow='';document.body.style.overflow='';document.documentElement.style.overflowY='auto';document.body.style.overflowY='auto';}
+function isSessionConnected(){return !!(data&&role);}
+function renderLandingConnectedMenu(){const bar=$('landingConnectedMenu'),nav=$('landingUserMenu'),actions=$('landingNavActions'),badge=$('landingConnectedBadge');if(!bar||!nav)return;const connected=isSessionConnected();bar.classList.toggle('hidden',!connected);if(actions)actions.classList.toggle('is-connected',connected);if(!connected){nav.innerHTML='';return;}const arr=allowedPagesForRole().filter(k=>k!=='logout');const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));nav.innerHTML='<button class="home-active" type="button" onclick="showLanding();return false;">Accueil</button>'+visible.map(k=>'<button type="button" onclick="return goPageFromLanding(\''+k+'\')">'+escapeHtml(menuLabelForRole(k))+'</button>').join('');const rn=$('landingConnectedRole'),un=$('landingConnectedName');if(rn)rn.textContent=currentRoleLabel();if(un)un.textContent=(data&&data.user&&data.user.name)||(data&&data.bank&&data.bank.manager)||'Utilisateur';if(badge)badge.textContent='Connecté · '+currentRoleLabel();}
+function goPageFromLanding(page){if(!isSessionConnected()){renderLandingConnectedMenu();showLanding();return false;}const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='none';if(a)a.style.display='none';if(app)app.style.display='block';restorePageScroll();applyRoleShell();if(hasPageAccess(page))active=page;else active=allowedPagesForRole().find(x=>x!=='logout')||'dashboard';renderMenu();render();closeMobileMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
+function showLanding(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';restorePageScroll();renderLandingConnectedMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
 function showAuth(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(app)app.style.display='none';if(a)a.style.display='grid';document.body.classList.add('auth-popup-open');}
-function closeAuthPopup(){const a=$('auth'),l=$('landing'),app=$('app');if(a)a.style.display='none';document.body.classList.remove('auth-popup-open');if(!app||app.style.display!=='block'){if(l)l.style.display='block';}return false;}
+function closeAuthPopup(){const a=$('auth'),l=$('landing'),app=$('app');if(a)a.style.display='none';restorePageScroll();if(!app||app.style.display!=='block'){if(l)l.style.display='block';renderLandingConnectedMenu();}return false;}
 function handleAuthBackdrop(e){if(e&&e.target===$('auth'))closeAuthPopup();}
 function openAuthLogin(){showAuth();switchTab('login');clearLoginError();clearAuthInfo();setTimeout(()=>{const el=$('loginId');if(el)el.focus();},80);return false;}
 function openAuthRegister(){showAuth();switchTab('register');clearLoginError();clearAuthInfo();setTimeout(()=>{const el=$('bankName');if(el)el.focus();},80);return false;}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('auth')&&$('auth').style.display==='grid')closeAuthPopup();});
-function enhanceFastUi(){document.querySelectorAll('button,a,.btn,.mini').forEach(el=>{if(el.dataset.fastUiBound)return;el.dataset.fastUiBound='1';el.addEventListener('pointerdown',()=>el.classList.add('is-pressing'),{passive:true});['pointerup','pointercancel','mouseleave','blur'].forEach(evt=>el.addEventListener(evt,()=>el.classList.remove('is-pressing'),{passive:true}));});}
+function enhanceFastUi(){if(window.__fastUiBound)return;window.__fastUiBound=true;document.addEventListener('pointerdown',e=>{const el=e.target.closest&&e.target.closest('button,a,.btn,.mini');if(el)el.classList.add('is-pressing')},{passive:true});document.addEventListener('pointerup',e=>{const el=e.target.closest&&e.target.closest('button,a,.btn,.mini');if(el)el.classList.remove('is-pressing')},{passive:true});document.addEventListener('pointercancel',()=>document.querySelectorAll('.is-pressing').forEach(el=>el.classList.remove('is-pressing')),{passive:true});}
 
 checkStatus();load().then(openApp).catch(()=>{token='';showLanding()})
 

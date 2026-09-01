@@ -574,8 +574,26 @@ async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA
 
 async function managementSettings(env,bankId){
  const now=new Date();
+ const currentYear=now.getUTCFullYear(),currentMonth=now.getUTCMonth()+1;
+ const currentMonthStart=`${currentYear}-${String(currentMonth).padStart(2,'0')}-01`;
  let row=await env.DB.prepare('SELECT * FROM management_settings WHERE bank_id=?').bind(bankId).first();
- if(!row){row={bank_id:bankId,year:now.getFullYear(),month:now.getMonth()+1,status:'open'};try{await env.DB.prepare('INSERT INTO management_settings(bank_id,year,month,status) VALUES(?,?,?,?)').bind(bankId,row.year,row.month,row.status).run();}catch(e){}}
+ if(!row){
+  row={bank_id:bankId,year:currentYear,month:currentMonth,status:'open',updated_at:now.toISOString()};
+  try{await env.DB.prepare('INSERT INTO management_settings(bank_id,year,month,status) VALUES(?,?,?,?)').bind(bankId,row.year,row.month,row.status).run();}catch(e){}
+  return row;
+ }
+ // Bascule calendrier automatique : si l'exercice n'a pas été touché depuis le début
+ // du mois courant, il avance tout seul sur le mois réel et repart ouvert.
+ // Une consultation historique choisie manuellement pendant le mois reste donc possible.
+ const updatedDay=String(row.updated_at||'').slice(0,10);
+ const storedPeriod=Number(row.year||0)*100+Number(row.month||0);
+ const currentPeriod=currentYear*100+currentMonth;
+ if(storedPeriod<currentPeriod&&(!updatedDay||updatedDay<currentMonthStart)){
+  row={...row,year:currentYear,month:currentMonth,status:'open',updated_at:now.toISOString()};
+  try{
+   await env.DB.prepare("UPDATE management_settings SET year=?,month=?,status='open',updated_at=datetime('now') WHERE bank_id=?").bind(currentYear,currentMonth,bankId).run();
+  }catch(e){}
+ }
  return row;
 }
 async function rejectIfExerciseClosed(env,bankId){const s=await managementSettings(env,bankId);const st=String(s.status||'open').toLowerCase();if(st==='locked'||st==='closed')throw json({error:'Exercice '+(st==='locked'?'verrouillé':'clôturé')+' : modification impossible. Consultation et impression restent autorisées.'},403);}

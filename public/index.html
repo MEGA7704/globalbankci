@@ -5221,29 +5221,25 @@ function bankProfilePreviewTable(b){
  const logo=b.logo?`<img src="${escapeHtml(b.logo)}" alt="Logo banque">`:`<span class="bankPreviewLogoText">Logo<br>banque</span>`;
  const footer=bankProfilePreviewValue(b.footer_text,'Document généré automatiquement');
  const legal=bankProfilePreviewValue(b.legal_mentions);
- return `<div class="bankProfileOverviewCard">
+ const item=(icon,label,value,extra='')=>`<div class="bankProfileInfoCard"><span class="bankProfileInfoIcon">${icon}</span><div><small>${label}</small>${extra||`<b>${escapeHtml(bankProfilePreviewValue(value))}</b>`}</div></div>`;
+ return `<div class="bankProfileOverviewCard bankProfileOverviewV41">
   <div class="bankProfileOverviewTop">
    <div class="bankPreviewLogoLarge">${logo}</div>
-   <div><strong>${escapeHtml(bankProfilePreviewValue(b.name,'Nom de la banque'))}</strong><small>${escapeHtml(bankProfilePreviewValue(b.slogan,'Slogan non renseigné'))}</small><div class="bankOverviewStatusLine"><span class="bankStatusBadge">Actif</span><em>Profil officiel utilisé dans les documents imprimés</em></div></div>
+   <div><strong>${escapeHtml(bankProfilePreviewValue(b.name,'Nom de la banque'))}</strong><small>${escapeHtml(bankProfilePreviewValue(b.slogan,'Slogan non renseigné'))}</small><div class="bankOverviewStatusLine"><span class="bankStatusBadge">✓ Actif</span><em>Profil officiel utilisé dans les documents imprimés</em></div></div>
   </div>
-  <div class="bankOverviewDetails">
-   <div><small>Nom de la banque</small><b>${escapeHtml(bankProfilePreviewValue(b.name))}</b></div>
-   <div><small>Responsable</small><b>${escapeHtml(bankProfilePreviewValue(b.manager))}</b></div>
-   <div><small>Contact</small><b>${escapeHtml(bankProfilePreviewValue(b.contact))}</b></div>
-   <div><small>Email</small><b>${escapeHtml(bankProfilePreviewValue(b.email))}</b></div>
-   <div><small>Adresse</small><b>${escapeHtml(bankProfilePreviewValue(b.address))}</b></div>
-   <div><small>Ville / Pays</small><b>${escapeHtml(bankProfilePreviewValue(cityCountry))}</b></div>
-   <div><small>Devise</small><b>${escapeHtml(bankProfilePreviewValue(b.currency,'FCFA'))}</b></div>
-   <div><small>Slogan</small><b>${escapeHtml(bankProfilePreviewValue(b.slogan))}</b></div>
-   <div><small>Identifiant</small><b>${escapeHtml(bankProfilePreviewValue(b.login))}</b></div>
-  </div>
-  <div class="bankOverviewColors">
-   <div class="bankOverviewColorBlock"><small>Couleur principale</small><div class="bankOverviewColorValue"><span class="bankOverviewColorDot" style="background:${escapeHtml(primary)}"></span><b>${escapeHtml(primary)}</b></div></div>
-   <div class="bankOverviewColorBlock"><small>Couleur secondaire</small><div class="bankOverviewColorValue"><span class="bankOverviewColorDot" style="background:${escapeHtml(secondary)}"></span><b>${escapeHtml(secondary)}</b></div></div>
-  </div>
-  <div class="bankOverviewDocs">
-   <div class="bankOverviewDocBlock"><small>Pied de page des documents</small><b>${escapeHtml(footer)}</b></div>
-   <div class="bankOverviewDocBlock"><small>Mentions légales</small><b>${escapeHtml(legal)}</b></div>
+  <div class="bankProfileInfoGrid">
+   ${item('🏦','Nom de la banque',b.name)}
+   ${item('👤','Responsable',b.manager)}
+   ${item('☎','Contact',b.contact)}
+   ${item('✉','Email',b.email)}
+   ${item('📍','Adresse',b.address)}
+   ${item('🗺','Ville / Pays',cityCountry)}
+   ${item('🪙','Devise',b.currency||'FCFA')}
+   ${item('◉','Identifiant',b.login)}
+   ${item('🎨','Couleur principale','',`<div class="bankOverviewColorValue"><span class="bankOverviewColorDot" style="background:${escapeHtml(primary)}"></span><b>${escapeHtml(primary)}</b></div>`)}
+   ${item('🎨','Couleur secondaire','',`<div class="bankOverviewColorValue"><span class="bankOverviewColorDot" style="background:${escapeHtml(secondary)}"></span><b>${escapeHtml(secondary)}</b></div>`)}
+   ${item('📄','Pied de page des documents',footer)}
+   ${item('🛡','Mentions légales',legal)}
   </div>
  </div>`;
 }
@@ -6176,7 +6172,28 @@ function printManagementArea(id){
  th{background:#003b3b;color:#e7ad2f;padding:5px 3px;text-align:center;white-space:normal;overflow-wrap:anywhere;line-height:1.12}
  td{border:1px solid #e5edf2;padding:4px 3px;white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:1.16}
  .annualTotal td{background:#fff5cf!important;font-weight:900}.activeMonthRow td{background:#fff9db}.moneyCell{text-align:right;white-space:normal}.redText{color:#dc2626!important}.greenText{color:#003b3b!important}.txtCenter{text-align:center}
- </style></head><body><div class="page"><div class="printHead"><h1>Année de gestion administrateur</h1><p>Banque : <b>${bankDisplayName()}</b> — Année : <b>${st.year}</b> — Mois actif : <b>${MANAGEMENT_MONTHS[st.month-1]}</b> — ${managementStatusIcon(st.status)} ${managementStatusLabel(st.status)} — Impression : <b>${new Date().toLocaleString('fr-FR')}</b></p></div>${el.innerHTML}</div></body></html>`);
+ 
+/* === V41 PROFIL BANQUE : FORMULE PROFESSIONNELLE 4 COLONNES === */
+.bankProfileOverviewV41{overflow:hidden!important}
+.bankProfileOverviewV41 .bankProfileOverviewTop{padding:24px 26px!important;background:linear-gradient(135deg,#fff,#f8fcff)!important;border-bottom:3px solid var(--bank-secondary)!important}
+.bankProfileOverviewV41 .bankProfileOverviewTop>div:last-child>strong{font-size:25px!important;color:var(--bank-primary)!important;letter-spacing:-.3px}
+.bankProfileOverviewV41 .bankProfileOverviewTop>div:last-child>small{font-size:13px!important;margin-top:5px!important}
+.bankProfileInfoGrid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;padding:22px!important;background:#fff!important}
+.bankProfileInfoCard{min-width:0;min-height:94px;display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #dfe8ee;border-radius:17px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:0 6px 18px rgba(15,23,42,.045)}
+.bankProfileInfoIcon{width:48px;height:48px;min-width:48px;border-radius:14px;display:grid;place-items:center;background:#eaf7f5;color:var(--bank-primary);font-size:22px;border:1px solid #d9eeea}
+.bankProfileInfoCard:nth-child(2) .bankProfileInfoIcon,.bankProfileInfoCard:nth-child(7) .bankProfileInfoIcon,.bankProfileInfoCard:nth-child(10) .bankProfileInfoIcon{background:#fff5d9}
+.bankProfileInfoCard:nth-child(3) .bankProfileInfoIcon,.bankProfileInfoCard:nth-child(12) .bankProfileInfoIcon{background:#e9f8ef}
+.bankProfileInfoCard:nth-child(4) .bankProfileInfoIcon,.bankProfileInfoCard:nth-child(11) .bankProfileInfoIcon{background:#eaf4ff}
+.bankProfileInfoCard:nth-child(5) .bankProfileInfoIcon,.bankProfileInfoCard:nth-child(8) .bankProfileInfoIcon{background:#fff0f0}
+.bankProfileInfoCard:nth-child(6) .bankProfileInfoIcon{background:#f4edff}
+.bankProfileInfoCard small{display:block;color:#64748b;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.35px;margin-bottom:6px}
+.bankProfileInfoCard b{display:block;color:#102f35;font-size:14px;font-weight:950;line-height:1.3;overflow-wrap:anywhere}
+.bankProfileInfoCard .bankOverviewColorValue{display:flex;align-items:center;gap:10px}
+.bankProfileInfoCard .bankOverviewColorDot{width:34px!important;height:34px!important;border-radius:10px!important;border:3px solid #fff!important;box-shadow:0 0 0 1px #d9e3ea,0 5px 12px rgba(15,23,42,.12)!important}
+@media(max-width:1180px){.bankProfileInfoGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:650px){.bankProfileInfoGrid{grid-template-columns:1fr!important;padding:12px!important}.bankProfileInfoCard{min-height:82px}.bankProfileOverviewV41 .bankProfileOverviewTop{padding:18px!important}}
+/* === FIN V41 === */
+</style></head><body><div class="page"><div class="printHead"><h1>Année de gestion administrateur</h1><p>Banque : <b>${bankDisplayName()}</b> — Année : <b>${st.year}</b> — Mois actif : <b>${MANAGEMENT_MONTHS[st.month-1]}</b> — ${managementStatusIcon(st.status)} ${managementStatusLabel(st.status)} — Impression : <b>${new Date().toLocaleString('fr-FR')}</b></p></div>${el.innerHTML}</div></body></html>`);
  w.document.close();
  setTimeout(()=>w.print(),400);
 }

@@ -1749,6 +1749,12 @@ button,a,.btn,.mini,.menu button{touch-action:manipulation;-webkit-tap-highlight
 
 </style>
 
+
+<style id="v30-page-routing">
+.menu .app-menu-link{display:block;height:100%;text-decoration:none;color:inherit;flex:0 0 auto}
+.menu .app-menu-link>button{width:100%}
+@media(max-width:900px){.topbar .menu .app-menu-link{width:100%;height:auto}.topbar .menu .app-menu-link>button{width:100%}}
+</style>
 </head>
 <body>
 <button id="globalHomeBtn" type="button" class="v24-global-home" onclick="showLanding()">⌂ Accueil</button>
@@ -1920,6 +1926,35 @@ const AGENT_NAV_META={
 };
 function menuLabelForRole(key){const isAgent=['agent_caisse','agent_credit','auditeur'].includes(currentRoleKey());const meta=isAgent&&AGENT_NAV_META[key];return meta?`${meta.icon}<span>${meta.label}</span>`:(labels[key]||key)}
 
+// === V30 : ROUTAGE PAR PAGES DÉDIÉES / URLS STABLES ===
+const PAGE_ROUTES={
+ dashboard:'/app/tableau-de-bord',superdash:'/app/tableau-de-bord',
+ clients:'/app/clients',comptes:'/app/comptes',mouvements:'/app/mouvements',
+ caisse:'/app/nouvelle-operation',mesoperations:'/app/mes-operations',credit:'/app/credits',
+ gestion:'/app/exercices',rapports:'/app/rapports',auditrapports:'/app/rapports',
+ utilisateurs:'/app/utilisateurs',parametres:'/app/parametres',securite:'/app/securite',
+ corrections:'/app/corrections',mailbox:'/app/messagerie',notifications:'/app/notifications',
+ banques:'/app/banques'
+};
+function pageUrl(page){return PAGE_ROUTES[String(page||'')]||('/app/'+encodeURIComponent(String(page||'dashboard')));}
+function pageFromUrl(){
+ const path=decodeURIComponent(location.pathname||'/').replace(/\/+$/,'')||'/';
+ if(path==='/'||path==='/index.html')return '';
+ const exact=Object.entries(PAGE_ROUTES).find(([,url])=>url===path);
+ if(exact)return exact[0];
+ if(path.startsWith('/app/')){const slug=path.slice(5);return Object.keys(PAGE_ROUTES).find(k=>k===slug)||'';}
+ return '';
+}
+function syncPageUrl(page,replace=false){
+ const url=pageUrl(page);
+ if(location.pathname===url)return;
+ try{history[replace?'replaceState':'pushState']({globalBankPage:page},'',url);}catch(_){ }
+}
+function syncHomeUrl(replace=false){
+ if(location.pathname==='/'||location.pathname==='/index.html')return;
+ try{history[replace?'replaceState':'pushState']({globalBankHome:true},'','/');}catch(_){ }
+}
+
 const ROLE_DEFAULT_PERMISSIONS={
  admin_bank:['ALL'],
  agent_caisse:['clients.read','accounts.read','moves.create.deposit','moves.create.withdrawal','moves.create.cashier_fees','moves.read.own','receipts.print','correction.request','profile.read.own'],
@@ -1958,11 +1993,12 @@ function toggleMobileMenu(){const t=document.querySelector('.topbar');if(t)t.cla
 function closeMobileMenu(){const t=document.querySelector('.topbar');if(t)t.classList.remove('menu-open');}
 function togglePasswordField(id,btn){const el=$(id);if(!el)return false;el.type=el.type==='password'?'text':'password';if(btn){if(btn.hasAttribute('data-eye-icon')){btn.classList.toggle('is-visible',el.type==='text');btn.setAttribute('aria-label',el.type==='password'?'Afficher le mot de passe':'Masquer le mot de passe');}else{btn.textContent=el.type==='password'?'👁️':'🙈';}}return false;}
 
-function goPage(page){
+function goPage(page,opts={}){
  if(window.currentCreditDetailId){window.currentCreditDetailId=null;window.creditDetailReturnPage='';window.creditDetailReturnList=false;}
  if(window.creditAgentListOpen)window.creditAgentListOpen=false;
  closeMobileMenu(); // retour tactile immédiat avant tout rendu lourd
  if(!hasPageAccess(page)){active=page;renderMenu();renderAccessDenied(page);logRoleAction('Accès refusé',labels[page]||page,'refusé','Page interdite au rôle '+currentRoleLabel());return false;}
+ if(!opts.fromHistory)syncPageUrl(page,!!opts.replace);
  if(active===page){restorePageScroll();return false;}
  active=page;renderMenu();restorePageScroll();
  // Laisse le navigateur peindre immédiatement le clic/menu fermé sur mobile, puis rend la page.
@@ -1975,7 +2011,7 @@ function renderMenu(){
  const visible=arr.filter(k=>!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));
  const signature=currentRoleKey()+'|'+visible.join('|');
  if(m.dataset.menuSignature!==signature){
-  m.innerHTML=`<button class="app-home-menu" onclick="showLanding();return false;">Accueil</button>`+visible.map(k=>k==='logout'?`<button data-page="logout" onclick="logout()">${menuLabelForRole(k)}</button>`:`<button data-page="${k}" onclick="return goPage('${k}')">${menuLabelForRole(k)}</button>`).join('');
+  m.innerHTML=`<a href="/" class="app-menu-link" onclick="showLanding();return false;"><button type="button" class="app-home-menu">Accueil</button></a>`+visible.map(k=>k==='logout'?`<button data-page="logout" onclick="logout()">${menuLabelForRole(k)}</button>`:`<a class="app-menu-link" data-page-link="${k}" href="${pageUrl(k)}" onclick="return goPage('${k}')"><button type="button" data-page="${k}">${menuLabelForRole(k)}</button></a>`).join('');
   m.dataset.menuSignature=signature;
  }
  m.querySelectorAll('button[data-page]').forEach(btn=>btn.classList.toggle('active',btn.dataset.page===active));
@@ -2223,7 +2259,7 @@ function applyRoleShell(){
   if(profileIcon)profileIcon.textContent='🔎';
  }
 }
-function openApp(){const landing=$('landing'),auth=$('auth'),app=$('app'),h=$('globalHomeBtn');if(landing)landing.style.display='none';if(auth)auth.style.display='none';if(app)app.style.display='block';if(h)h.style.display='inline-flex';restorePageScroll();active=allowedPagesForRole()[0]||'dashboard';applyRoleShell();renderMenu();renderLandingConnectedMenu();render();setupFreeVersionReminder();requestAnimationFrame(()=>window.scrollTo(0,0));}
+function openApp(){const landing=$('landing'),auth=$('auth'),app=$('app'),h=$('globalHomeBtn');if(landing)landing.style.display='none';if(auth)auth.style.display='none';if(app)app.style.display='block';if(h)h.style.display='inline-flex';restorePageScroll();const routed=pageFromUrl();active=(routed&&hasPageAccess(routed))?routed:(allowedPagesForRole()[0]||'dashboard');if(!routed)syncPageUrl(active,true);applyRoleShell();renderMenu();renderLandingConnectedMenu();render();setupFreeVersionReminder();requestAnimationFrame(()=>window.scrollTo(0,0));}
 async function logout(){try{await api('/logout',{})}catch{}if(__freeVersionReminderTimer)clearInterval(__freeVersionReminderTimer);__freeVersionReminderTimer=null;token='';data=null;role=null;mailboxState={items:[],loaded:false,loading:false,error:'',filter:'all',search:''};renderLandingConnectedMenu();showLanding()}function bank(){return data.bank||{}}
 function bankDisplayName(){let b=bank();let n=String((b&&b.name)||'').trim();return n||'Banque'}
 
@@ -4501,11 +4537,11 @@ function securityJournal(){const rows=(data.security_logs||[]).map(l=>`<tr><td>$
 function securite(){return securityJournal()}
 
 
-function subscriptionPlanCode(b){return String((b&&b.subscription)||'FREE').toUpperCase()==='BUSINESS'?'BUSINESS':'FREE'}
-function subscriptionPlanLabel(b){return subscriptionPlanCode(b)==='BUSINESS'?'Business':'Free'}
+function subscriptionPlanCode(b){const x=String((b&&b.subscription)||'FREE').toUpperCase();return ['FREE','STANDARD','BUSINESS','ULTIMATE'].includes(x)?x:'FREE'}
+function subscriptionPlanLabel(b){return ({FREE:'Free',STANDARD:'Standard',BUSINESS:'Business',ULTIMATE:'Ultimate'})[subscriptionPlanCode(b)]}
 function subscriptionDateObj(v){const raw=String(v||'').trim();if(!raw)return null;const d=(typeof parseBusinessDate==='function'?parseBusinessDate(raw):new Date(raw.replace(' ','T')));return d&&isFinite(d.getTime())?d:null}
 function subscriptionAddDays(d,days){if(!d||!isFinite(d.getTime()))return null;const x=new Date(d.getTime());x.setDate(x.getDate()+Number(days||0));return x}
-function subscriptionPlanDurationDays(b){return subscriptionPlanCode(b)==='BUSINESS'?365:20}
+function subscriptionPlanDurationDays(b){return ({FREE:10,STANDARD:30,BUSINESS:365,ULTIMATE:0})[subscriptionPlanCode(b)]}
 function subscriptionStartDateObj(b){return subscriptionDateObj((b&&b.subscription_started_at)||(b&&b.created_at)||'')}
 function subscriptionEndDateObj(b){const direct=subscriptionDateObj(b&&b.subscription_expires_at);if(direct)return direct;return subscriptionAddDays(subscriptionStartDateObj(b),subscriptionPlanDurationDays(b))}
 function subscriptionRemainingNumber(b){const end=subscriptionEndDateObj(b);if(end){const n=Math.ceil((end.getTime()-Date.now())/86400000);return Math.max(0,n)}const d=Number((b&&b.days_remaining)||0);return Math.max(0,isFinite(d)?d:0)}
@@ -4529,12 +4565,12 @@ function subscriptionInfoHtml(b){
  const startText=subscriptionDateLong(startObj);const endText=subscriptionDateLong(endObj);const createdText=subscriptionDateLong(createdObj);const updatedText=subscriptionDateLong(updatedObj);
  const bankName=escapeHtml((typeof bankDisplayName==='function'?bankDisplayName():(b&&b.name)||'—'));
  const manager=escapeHtml((b&&b.manager)||'—');const contactRaw=String((b&&b.contact)||((typeof bankField==='function')?bankField('contact',''):'')||'').trim();const contact=escapeHtml(contactRaw||'—');
- const versionSub=planCode==='BUSINESS'?'Accès Business activé':'Accès Free activé';
- const durationText=planCode==='BUSINESS'?'Durée totale : 365 jours':'Durée totale : 20 jours';
+ const versionSub='Accès complet activé';
+ const durationText=planCode==='ULTIMATE'?'Durée illimitée':`Durée totale : ${duration} jours`;
  const statusClass=expired?'subscriptionStatusExpired':(suspended?'subscriptionStatusSuspended':'subscriptionStatusActive');
  const statusSub=expired?'Abonnement expiré — contactez le Super Admin':(suspended?'Abonnement suspendu':'Abonnement utilisable');
- const knowIntro=planCode==='BUSINESS'?'Votre compte est en version Business. Le renouvellement peut être effectué par le Super Admin avant ou après expiration.':'Votre compte est en version Free. La version Free dure 20 jours à partir de la date de création du compte. À l’expiration, l’activation Business peut être effectuée par le Super Admin.';
- const iconPlan=planCode==='BUSINESS'?'💼':'🆓';const iconStatus=expired?'⛔':(suspended?'⏸️':'✅');
+ const knowIntro=status==='Actif'?'Votre abonnement est actif. Il est impossible de souscrire à une autre formule avant son expiration.':'Votre abonnement est arrivé à expiration. Vous pouvez désormais choisir une autre formule.';
+ const iconPlan=({FREE:'🆓',STANDARD:'⭐',BUSINESS:'💼',ULTIMATE:'👑'})[planCode]||'🆓';const iconStatus=expired?'⛔':(suspended?'⏸️':'✅');
  return `<section id="param_subscription" class="paramBlock hidden subscriptionPage">
   <div class="subscriptionHeader">
    <div><h2>Mon abonnement</h2></div>
@@ -4544,8 +4580,8 @@ function subscriptionInfoHtml(b){
   <div class="subscriptionCards">
    <div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">${iconPlan}</span><h3>Version actuelle</h3></div><div><div class="subscriptionValue">${escapeHtml(plan)}</div><div class="subscriptionSub">${versionSub}</div></div></div>
    <div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">${iconStatus}</span><h3>Statut</h3></div><div><div class="subscriptionValue ${statusClass}">${escapeHtml(status)}</div><div class="subscriptionSub">${statusSub}</div></div></div>
-   <div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">📅</span><h3>Jours restants</h3></div><div><div class="subscriptionValue">${left}</div><div class="subscriptionSub">${durationText}</div></div></div>
-   <div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">⏳</span><h3>Expiration</h3></div><div><div class="subscriptionValue small">${escapeHtml(subscriptionDateShort(endObj))}</div><div class="subscriptionSub">Date limite de validité</div></div></div>
+   <div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">📅</span><h3>Jours restants</h3></div><div><div class="subscriptionValue">${planCode==='ULTIMATE'?'∞':left}</div><div class="subscriptionSub">${durationText}</div></div></div>
+   <div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">⏳</span><h3>Expiration</h3></div><div><div class="subscriptionValue small">${planCode==='ULTIMATE'?'Illimitée':escapeHtml(subscriptionDateShort(endObj))}</div><div class="subscriptionSub">Date limite de validité</div></div></div>
   </div>
   <div class="subscriptionBlock">
    <h3>Progression de l’abonnement</h3>
@@ -4562,12 +4598,15 @@ function subscriptionInfoHtml(b){
     <tr><td>Statut abonnement</td><td><span class="${statusClass}"><b>${escapeHtml(status)}</b></span></td></tr>
     <tr><td>Date de création du compte</td><td>${escapeHtml(createdText)}</td></tr>
     <tr><td>Date d’activation / début</td><td>${escapeHtml(startText)}</td></tr>
-    <tr><td>Date d’expiration</td><td>${escapeHtml(endText)}</td></tr>
+    <tr><td>Date d’expiration</td><td>${planCode==='ULTIMATE'?'Illimitée':escapeHtml(endText)}</td></tr>
     <tr><td>Dernière mise à jour abonnement</td><td>${escapeHtml(updatedText)}</td></tr>
-    <tr><td>Durée officielle</td><td>${duration} jours</td></tr>
-    <tr><td>Jours restants</td><td>${left} jour${left>1?'s':''}</td></tr>
+    <tr><td>Durée officielle</td><td>${planCode==='ULTIMATE'?'Illimitée':duration+' jours'}</td></tr>
+    <tr><td>Jours restants</td><td>${planCode==='ULTIMATE'?'Illimités':left+' jour'+(left>1?'s':'')}</td></tr>
    </table></div>
   </div>
+  <div class="subscriptionBlock"><h3>Formules disponibles</h3><div class="subscriptionCards">
+   ${[{c:'FREE',n:'Free',p:'Gratuit',d:'10 jours',i:'🆓'},{c:'STANDARD',n:'Standard',p:'9 880 FCFA',d:'30 jours',i:'⭐'},{c:'BUSINESS',n:'Business',p:'99 900 FCFA',d:'365 jours (1 an)',i:'💼'},{c:'ULTIMATE',n:'Ultimate',p:'899 000 FCFA',d:'Durée illimitée',i:'👑'}].map(x=>`<div class="subscriptionCard"><div class="subscriptionCardTop"><span class="subscriptionIcon">${x.i}</span><h3>${x.n}</h3></div><div><div class="subscriptionValue small">${x.p}</div><div class="subscriptionSub">Accès complet · ${x.d}</div><div class="subscriptionSub" style="margin-top:10px"><b>${planCode===x.c?'Formule actuelle':(status==='Actif'?'Souscription indisponible pendant un abonnement actif':'Disponible après validation')}</b></div></div></div>`).join('')}
+  </div></div>
   <div class="subscriptionKnow">
    <h3>À savoir</h3>
    <p>${escapeHtml(knowIntro)}</p>
@@ -6191,8 +6230,8 @@ function gestion(){
 function restorePageScroll(){document.body.classList.remove('auth-popup-open');if(!document.getElementById('proModalBackdrop'))document.body.classList.remove('modal-open');document.documentElement.style.overflow='';document.body.style.overflow='';document.documentElement.style.overflowY='auto';document.body.style.overflowY='auto';}
 function isSessionConnected(){return !!(data&&role);}
 function renderLandingConnectedMenu(){const bar=$('landingConnectedMenu'),nav=$('landingUserMenu');if(!bar||!nav)return;const connected=isSessionConnected();bar.classList.remove('hidden');if(!connected){nav.innerHTML='<button class="home-active" type="button" onclick="showLanding();return false;">Accueil</button><button type="button" onclick="openAuthLogin();return false;">Se connecter</button><button class="landing-auth-primary" type="button" onclick="openAuthRegister();return false;">Créer ma banque</button>';return;}const arr=allowedPagesForRole();const hiddenAdminButtons=new Set(['utilisateurs','mailbox','notifications']);const visible=arr.filter(k=>k!=='logout'&&!(currentRoleKey()==='admin_bank'&&hiddenAdminButtons.has(k)));nav.innerHTML='<button class="home-active" type="button" onclick="showLanding();return false;">Accueil</button>'+visible.map(k=>'<button type="button" onclick="return goPageFromLanding(\''+k+'\')">'+escapeHtml(menuLabelForRole(k))+'</button>').join('')+'<button class="landing-logout-btn" type="button" onclick="logout();return false;">Déconnexion</button>';}
-function goPageFromLanding(page){if(!isSessionConnected()){renderLandingConnectedMenu();showLanding();return false;}const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='none';if(a)a.style.display='none';if(app)app.style.display='block';restorePageScroll();applyRoleShell();if(hasPageAccess(page))active=page;else active=allowedPagesForRole().find(x=>x!=='logout')||'dashboard';renderMenu();render();closeMobileMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
-function showLanding(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';restorePageScroll();renderLandingConnectedMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
+function goPageFromLanding(page){if(!isSessionConnected()){renderLandingConnectedMenu();showLanding();return false;}const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='none';if(a)a.style.display='none';if(app)app.style.display='block';restorePageScroll();applyRoleShell();if(hasPageAccess(page))active=page;else active=allowedPagesForRole().find(x=>x!=='logout')||'dashboard';syncPageUrl(active);renderMenu();render();closeMobileMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
+function showLanding(opts={}){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(a)a.style.display='none';if(app)app.style.display='none';if(!opts.fromHistory)syncHomeUrl(!!opts.replace);restorePageScroll();renderLandingConnectedMenu();requestAnimationFrame(()=>window.scrollTo(0,0));return false;}
 function showAuth(){const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='block';if(app)app.style.display='none';if(a)a.style.display='grid';document.body.classList.add('auth-popup-open');}
 function closeAuthPopup(){const a=$('auth'),l=$('landing'),app=$('app');if(a)a.style.display='none';restorePageScroll();if(!app||app.style.display!=='block'){if(l)l.style.display='block';renderLandingConnectedMenu();}return false;}
 function handleAuthBackdrop(e){if(e&&e.target===$('auth'))closeAuthPopup();}
@@ -6202,7 +6241,17 @@ function openAuthRegister(){showAuth();switchTab('register');clearLoginError();c
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('auth')&&$('auth').style.display==='grid')closeAuthPopup();});
 function enhanceFastUi(){if(window.__fastUiBound)return;window.__fastUiBound=true;document.documentElement.classList.add('fast-ui-ready');document.addEventListener('pointerdown',e=>{const el=e.target.closest&&e.target.closest('button,a,.btn,.mini');if(el)el.classList.add('is-pressing')},{passive:true});document.addEventListener('pointerup',e=>{const el=e.target.closest&&e.target.closest('button,a,.btn,.mini');if(el)el.classList.remove('is-pressing')},{passive:true});document.addEventListener('pointercancel',()=>document.querySelectorAll('.is-pressing').forEach(el=>el.classList.remove('is-pressing')),{passive:true});}
 
-checkStatus();load().then(openApp).catch(()=>{token='';showLanding()})
+window.addEventListener('popstate',()=>{
+ const routed=pageFromUrl();
+ if(!routed){showLanding({fromHistory:true});return;}
+ if(isSessionConnected()){
+  const l=$('landing'),a=$('auth'),app=$('app');if(l)l.style.display='none';if(a)a.style.display='none';if(app)app.style.display='block';
+  if(hasPageAccess(routed)){active=routed;applyRoleShell();renderMenu();render();restorePageScroll();window.scrollTo(0,0);}
+  else renderAccessDenied(routed);
+ }
+});
+
+checkStatus();load().then(openApp).catch(()=>{token='';showLanding({replace:true})})
 
 // Réparation robuste du bouton Entrer + touche Entrée
 function bindLoginPage(){

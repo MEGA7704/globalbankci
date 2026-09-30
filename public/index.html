@@ -1779,6 +1779,31 @@ button,a,.btn,.mini,.menu button{touch-action:manipulation;-webkit-tap-highlight
 .menu .app-menu-link>button{width:100%}
 @media(max-width:900px){.topbar .menu .app-menu-link{width:100%;height:auto}.topbar .menu .app-menu-link>button{width:100%}}
 </style>
+
+<style id="v42-bank-profile-fix">
+/* V42 - Profil banque professionnel 4 colonnes */
+.bankProfileOverviewV41{overflow:hidden!important;border:1px solid #e2e8f0!important;border-radius:20px!important;background:#fff!important}
+.bankProfileOverviewV41 .bankProfileOverviewTop{display:flex!important;align-items:center!important;gap:20px!important;padding:24px 26px!important;background:linear-gradient(135deg,#fff,#f8fcff)!important;border-bottom:3px solid var(--bank-secondary)!important}
+.bankProfileOverviewV41 .bankPreviewLogoLarge{width:100px!important;height:100px!important;min-width:100px!important;border-radius:22px!important;display:grid!important;place-items:center!important;overflow:hidden!important;background:#fff8dc!important;border:1px solid #f1d77a!important}
+.bankProfileOverviewV41 .bankPreviewLogoLarge img{width:100%!important;height:100%!important;object-fit:contain!important;padding:8px!important}
+.bankProfileOverviewV41 .bankPreviewLogoText{text-align:center!important;font-weight:900!important;color:#6b5410!important;line-height:1.1!important}
+.bankProfileOverviewV41 .bankProfileOverviewTop>div:last-child{min-width:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important}
+.bankProfileOverviewV41 .bankProfileOverviewTop>div:last-child>strong{display:block!important;font-size:25px!important;color:var(--bank-primary)!important;letter-spacing:-.3px!important}
+.bankProfileOverviewV41 .bankProfileOverviewTop>div:last-child>small{display:block!important;color:#64748b!important;font-size:13px!important;font-weight:800!important;margin-top:5px!important}
+.bankOverviewStatusLine{display:flex!important;align-items:center!important;gap:12px!important;flex-wrap:wrap!important;margin-top:12px!important}
+.bankStatusBadge{display:inline-flex!important;align-items:center!important;border-radius:999px!important;background:#dcfce7!important;color:#15803d!important;padding:7px 13px!important;font-weight:950!important}
+.bankOverviewStatusLine em{font-style:normal!important;color:#64748b!important;font-weight:800!important}
+.bankProfileInfoGrid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;padding:22px!important;background:#fff!important}
+.bankProfileInfoCard{box-sizing:border-box!important;min-width:0!important;min-height:94px!important;display:flex!important;align-items:center!important;gap:14px!important;padding:16px!important;border:1px solid #dfe8ee!important;border-radius:17px!important;background:linear-gradient(180deg,#fff,#fbfdff)!important;box-shadow:0 6px 18px rgba(15,23,42,.045)!important}
+.bankProfileInfoIcon{width:48px!important;height:48px!important;min-width:48px!important;border-radius:14px!important;display:grid!important;place-items:center!important;background:#eaf7f5!important;color:var(--bank-primary)!important;font-size:22px!important;border:1px solid #d9eeea!important}
+.bankProfileInfoCard>div{min-width:0!important}
+.bankProfileInfoCard small{display:block!important;color:#64748b!important;font-size:10px!important;font-weight:950!important;text-transform:uppercase!important;letter-spacing:.35px!important;margin:0 0 6px!important}
+.bankProfileInfoCard b{display:block!important;color:#102f35!important;font-size:14px!important;font-weight:950!important;line-height:1.3!important;overflow-wrap:anywhere!important}
+.bankProfileInfoCard .bankOverviewColorValue{display:flex!important;align-items:center!important;gap:10px!important}
+.bankProfileInfoCard .bankOverviewColorDot{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important;border:3px solid #fff!important;box-shadow:0 0 0 1px #d9e3ea,0 5px 12px rgba(15,23,42,.12)!important}
+@media(max-width:1180px){.bankProfileInfoGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:650px){.bankProfileOverviewV41 .bankProfileOverviewTop{padding:18px!important;align-items:flex-start!important}.bankProfileOverviewV41 .bankPreviewLogoLarge{width:78px!important;height:78px!important;min-width:78px!important}.bankProfileInfoGrid{grid-template-columns:1fr!important;padding:12px!important}.bankProfileInfoCard{min-height:82px!important}}
+</style>
 </head>
 <body>
 <button id="globalHomeBtn" type="button" class="v24-global-home" onclick="showLanding()">⌂ Accueil</button>

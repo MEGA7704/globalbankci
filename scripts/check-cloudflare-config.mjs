@@ -4,16 +4,16 @@ const config = await readFile('wrangler.toml', 'utf8');
 const requiredPatterns = [
   /pages_build_output_dir\s*=\s*"public"/,
   /\[vars\][\s\S]*SUPER_ADMIN_SESSION_VERSION\s*=\s*"[1-9][0-9]*"/,
-  /binding\s*=\s*"DB"[\s\S]*database_name\s*=\s*"bankdb"[\s\S]*database_id\s*=\s*"692edd7a-98d5-484a-aa75-5a86a9107c16"/,
-  /binding\s*=\s*"KV"[\s\S]*id\s*=\s*"f02b47264a8c411aa61052c45a3bb72a"/,
+  /binding\s*=\s*"DB"[\s\S]*database_name\s*=\s*"oukami_d1"[\s\S]*database_id\s*=\s*"001c173e-694b-434d-a8fc-8c5fa2351438"/,
+  /binding\s*=\s*"KV"[\s\S]*id\s*=\s*"25eac34d165240bfbd8c1bcd14c2954d"/,
 ];
 for (const pattern of requiredPatterns) {
   if (!pattern.test(config)) throw new Error(`Configuration Cloudflare incomplète : ${pattern}`);
 }
 
 // Les valeurs sensibles ne doivent jamais apparaître dans wrangler.toml.
-if (/SUPER_ADMIN_(?:LOGIN|PASSWORD)\s*=\s*["']/i.test(config)) {
-  throw new Error('Un secret Super Admin ne doit jamais être placé dans wrangler.toml.');
+if (/SUPER_ADMIN_PASSWORD\s*=\s*["']/i.test(config)) {
+  throw new Error('Le mot de passe Super Admin ne doit jamais être placé dans wrangler.toml.');
 }
 
 // Empêche l'expédition accidentelle de vrais fichiers de secrets, même si

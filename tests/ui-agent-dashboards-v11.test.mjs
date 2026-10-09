@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const html=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
-assert.match(html,/GLOBAL BANK V11 — INTERFACES PROFESSIONNELLES DES AGENTS/);
+assert.match(html,/ASSOCIATION OUKAMI DE DIABO V11 — INTERFACES PROFESSIONNELLES DES AGENTS/);
 assert.match(html,/role-agent_credit/);
 assert.match(html,/role-auditeur/);
 assert.match(html,/const AGENT_NAV_META=/);

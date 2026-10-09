@@ -1,4 +1,4 @@
--- GLOBAL BANK V9 — RBAC, demandes de correction et journalisation renforcée
+-- ASSOCIATION OUKAMI DE DIABO V9 — RBAC, demandes de correction et journalisation renforcée
 -- Les ajouts de colonnes sur une base V8 sont appliqués de manière idempotente
 -- par ensureSchema() dans public/_worker.js afin d'éviter l'échec d'une migration
 -- si le Worker a déjà préparé la base.

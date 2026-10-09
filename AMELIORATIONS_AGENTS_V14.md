@@ -1,4 +1,4 @@
-# GLOBAL BANK V14 — opérations caisse et crédits agents
+# ASSOCIATION OUKAMI DE DIABO V14 — opérations caisse et crédits agents
 
 ## Agent caisse
 - Le formulaire d’enregistrement n’est plus affiché directement dans la page.

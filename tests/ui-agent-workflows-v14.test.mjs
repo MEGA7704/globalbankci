@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 const worker=fs.readFileSync(new URL('../public/_worker.js',import.meta.url),'utf8');
 
-assert.match(html,/GLOBAL BANK V14 — POPUPS MOUVEMENTS CAISSE ET ESPACE CRÉDIT AGENT/);
+assert.match(html,/ASSOCIATION OUKAMI DE DIABO V14 — POPUPS MOUVEMENTS CAISSE ET ESPACE CRÉDIT AGENT/);
 assert.match(html,/function openCashierMovementModal\(/);
 assert.match(html,/Historique de mes opérations/);
 assert.match(html,/\+ Nouveau mouvement/);

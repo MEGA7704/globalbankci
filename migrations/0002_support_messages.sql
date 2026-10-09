@@ -1,4 +1,4 @@
--- GLOBAL BANK V6 — messagerie interne sécurisée
+-- ASSOCIATION OUKAMI DE DIABO V6 — messagerie interne sécurisée
 CREATE TABLE IF NOT EXISTS support_messages (
   id TEXT PRIMARY KEY,
   broadcast_id TEXT DEFAULT '',

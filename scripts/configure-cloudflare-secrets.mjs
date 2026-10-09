@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-const projectName = 'global-bank';
+const projectName = 'oukami-diabo';
 const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const secrets = ['SUPER_ADMIN_LOGIN', 'SUPER_ADMIN_PASSWORD'];
 

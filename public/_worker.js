@@ -7,10 +7,7 @@ const LOGIN_BLOCK_SECONDS = 15 * 60;
 const LOGIN_ACCOUNT_LIMIT = 5;
 const LOGIN_IP_LIMIT = 20;
 const SESSION_COOKIE = 'gb_session';
-const FREE_SUBSCRIPTION_DAYS = 10;
-const STANDARD_SUBSCRIPTION_DAYS = 30;
-const BUSINESS_SUBSCRIPTION_DAYS = 365;
-const SUBSCRIPTION_PLANS = Object.freeze({FREE:{label:'Free',days:10,price:0},STANDARD:{label:'Standard',days:30,price:9880},BUSINESS:{label:'Business',days:365,price:99900},ULTIMATE:{label:'Ultimate',days:null,price:899000}});
+const SUBSCRIPTION_PLANS = Object.freeze({ULTIMATE:{label:'Illimité',days:null,price:0}});
 const CLIENT_REQUEST_MAX_BYTES = 1200000;
 const CLIENT_IMAGE_MAX_DATAURL_CHARS = 850000;
 const CLIENT_DETAILS_MAX_CHARS = 16000;
@@ -62,7 +59,7 @@ async function resetDefaultCharges(env,bankId){
 let schemaReady = false;
 
 const SCHEMA = `
-CREATE TABLE IF NOT EXISTS banks (id TEXT PRIMARY KEY,name TEXT NOT NULL,manager TEXT,contact TEXT,address TEXT,email TEXT DEFAULT '',slogan TEXT DEFAULT '',logo TEXT DEFAULT '',stamp TEXT DEFAULT '',signature TEXT DEFAULT '',primary_color TEXT DEFAULT '#003b3b',secondary_color TEXT DEFAULT '#e7ad2f',footer_text TEXT DEFAULT 'Document généré automatiquement',legal_mentions TEXT DEFAULT '',cga_conditions TEXT DEFAULT '',currency TEXT DEFAULT 'FCFA',country TEXT DEFAULT '',city TEXT DEFAULT '',login TEXT NOT NULL UNIQUE,pass TEXT NOT NULL,auth_version INTEGER NOT NULL DEFAULT 1,status TEXT NOT NULL DEFAULT 'Actif',subscription TEXT NOT NULL DEFAULT 'FREE',subscription_started_at TEXT DEFAULT '',subscription_expires_at TEXT DEFAULT '',subscription_updated_at TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS banks (id TEXT PRIMARY KEY,name TEXT NOT NULL,manager TEXT,contact TEXT,address TEXT,email TEXT DEFAULT '',slogan TEXT DEFAULT '',logo TEXT DEFAULT '',stamp TEXT DEFAULT '',signature TEXT DEFAULT '',primary_color TEXT DEFAULT '#003b3b',secondary_color TEXT DEFAULT '#e7ad2f',footer_text TEXT DEFAULT 'Document généré automatiquement',legal_mentions TEXT DEFAULT '',cga_conditions TEXT DEFAULT '',currency TEXT DEFAULT 'FCFA',country TEXT DEFAULT '',city TEXT DEFAULT '',login TEXT NOT NULL UNIQUE,pass TEXT NOT NULL,auth_version INTEGER NOT NULL DEFAULT 1,status TEXT NOT NULL DEFAULT 'Actif',subscription TEXT NOT NULL DEFAULT 'PENDING',subscription_started_at TEXT DEFAULT '',subscription_expires_at TEXT DEFAULT '',subscription_updated_at TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS clients (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,name TEXT NOT NULL,contact TEXT,job TEXT,address TEXT,piece TEXT,pass TEXT,client_type TEXT DEFAULT 'personne_physique',client_details TEXT DEFAULT '',photo_logo TEXT DEFAULT '',is_blocked INTEGER NOT NULL DEFAULT 0,is_deleted INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,client_id TEXT NOT NULL,number TEXT NOT NULL UNIQUE,type TEXT NOT NULL,balance REAL NOT NULL DEFAULT 0,status TEXT NOT NULL DEFAULT 'Actif',is_blocked INTEGER NOT NULL DEFAULT 0,block_reason TEXT DEFAULT '',credit_fee REAL DEFAULT 0,credit_carnet_fee REAL DEFAULT 0,credit_amount REAL DEFAULT 0,credit_rate REAL DEFAULT 0,credit_duration INTEGER DEFAULT 0,credit_monthly REAL DEFAULT 0,credit_due_count INTEGER DEFAULT 0,credit_penalty_rate REAL DEFAULT 0,credit_total REAL DEFAULT 0,credit_choice TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE TABLE IF NOT EXISTS moves (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,account_id TEXT NOT NULL,type TEXT NOT NULL,description TEXT,amount REAL NOT NULL,balance_after REAL NOT NULL,created_by TEXT DEFAULT '',created_by_role TEXT DEFAULT '',is_voided INTEGER NOT NULL DEFAULT 0,voided_by TEXT DEFAULT '',voided_at TEXT DEFAULT '',void_reason TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT (datetime('now')));
@@ -549,10 +546,9 @@ async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA
   "currency TEXT DEFAULT 'FCFA'","country TEXT DEFAULT ''","city TEXT DEFAULT ''",
   "subscription_started_at TEXT","subscription_expires_at TEXT","subscription_updated_at TEXT","auth_version INTEGER NOT NULL DEFAULT 1"
  ]; for(const col of bankCols){try{await env.DB.exec('ALTER TABLE banks ADD COLUMN '+col)}catch(e){}}
- try{await env.DB.prepare("UPDATE banks SET subscription=CASE WHEN upper(COALESCE(subscription,'')) IN ('FREE','STANDARD','BUSINESS','ULTIMATE') THEN upper(subscription) ELSE 'FREE' END WHERE COALESCE(subscription,'')<>''").run();}catch(e){}
- try{await env.DB.prepare("UPDATE banks SET subscription='FREE' WHERE COALESCE(subscription,'')=''").run();}catch(e){}
+ try{await env.DB.prepare("UPDATE banks SET subscription='PENDING',subscription_expires_at='' WHERE upper(COALESCE(subscription,''))<>'ULTIMATE'").run();}catch(e){}
+ try{await env.DB.prepare("UPDATE banks SET subscription='PENDING',subscription_expires_at='' WHERE COALESCE(subscription,'')=''").run();}catch(e){}
  try{await env.DB.prepare("UPDATE banks SET subscription_started_at=COALESCE(NULLIF(subscription_started_at,''),created_at,datetime('now'))").run();}catch(e){}
- try{await env.DB.prepare("UPDATE banks SET subscription_expires_at=CASE WHEN COALESCE(subscription_expires_at,'')='' THEN datetime(COALESCE(subscription_started_at,created_at,datetime('now')), CASE WHEN subscription='BUSINESS' THEN '+365 days' WHEN subscription='STANDARD' THEN '+30 days' WHEN subscription='ULTIMATE' THEN '+100 years' ELSE '+20 days' END) ELSE subscription_expires_at END").run();}catch(e){}
  try{await env.DB.prepare("UPDATE banks SET subscription_updated_at=COALESCE(NULLIF(subscription_updated_at,''),subscription_started_at,created_at,datetime('now'))").run();}catch(e){}
  try{await env.DB.exec('CREATE TABLE IF NOT EXISTS security_logs (id TEXT PRIMARY KEY,bank_id TEXT NOT NULL,action TEXT,section TEXT,result TEXT,agent TEXT,created_at TEXT NOT NULL DEFAULT (datetime(\'now\')))')}catch(e){} const accountCols=['credit_fee REAL DEFAULT 0','credit_carnet_fee REAL DEFAULT 0','credit_amount REAL DEFAULT 0','credit_rate REAL DEFAULT 0','credit_duration INTEGER DEFAULT 0','credit_monthly REAL DEFAULT 0','credit_due_count INTEGER DEFAULT 0','credit_penalty_rate REAL DEFAULT 0','credit_total REAL DEFAULT 0',"credit_choice TEXT DEFAULT \"\"",'is_blocked INTEGER NOT NULL DEFAULT 0',"block_reason TEXT DEFAULT ''",'is_deleted INTEGER NOT NULL DEFAULT 0']; for(const col of accountCols){try{await env.DB.exec('ALTER TABLE accounts ADD COLUMN '+col)}catch(e){}} const obligationCols=["base_type TEXT DEFAULT 'Bénéfice général'","base_item TEXT DEFAULT ''"]; for(const col of obligationCols){try{await env.DB.exec('ALTER TABLE obligations ADD COLUMN '+col)}catch(e){}} for(const col of ['is_active INTEGER NOT NULL DEFAULT 1']){try{await env.DB.exec('ALTER TABLE account_types ADD COLUMN '+col)}catch(e){} try{await env.DB.exec('ALTER TABLE movement_types ADD COLUMN '+col)}catch(e){}} const movementTypeCols=["category TEXT DEFAULT ''",'is_bank_revenue INTEGER',"description TEXT DEFAULT ''"]; for(const col of movementTypeCols){try{await env.DB.exec('ALTER TABLE movement_types ADD COLUMN '+col)}catch(e){}} for(const col of ['is_blocked INTEGER NOT NULL DEFAULT 0','is_deleted INTEGER NOT NULL DEFAULT 0',"client_type TEXT DEFAULT 'personne_physique'","client_details TEXT DEFAULT ''","photo_logo TEXT DEFAULT ''"]){try{await env.DB.exec('ALTER TABLE clients ADD COLUMN '+col)}catch(e){}}
  const userCols=["status TEXT NOT NULL DEFAULT 'Actif'","permissions TEXT DEFAULT '{\"allow\":[],\"deny\":[]}'","last_login TEXT DEFAULT ''","auth_version INTEGER NOT NULL DEFAULT 1","is_deleted INTEGER NOT NULL DEFAULT 0"]; for(const col of userCols){try{await env.DB.exec('ALTER TABLE users ADD COLUMN '+col)}catch(e){}}
@@ -572,6 +568,14 @@ async function ensureSchema(env){if(schemaReady)return; await env.DB.exec(SCHEMA
   'CREATE INDEX IF NOT EXISTS idx_operation_requests_bank ON operation_requests(bank_id,created_at)',
   'CREATE INDEX IF NOT EXISTS idx_operation_requests_user ON operation_requests(bank_id,requested_by,created_at)'
  ]){try{await env.DB.exec(sql)}catch(e){}}
+ // V16 — mono-association : garantir que l’association OUKAMI existe avant toute gestion administrateur.
+ try{
+  const existing=await env.DB.prepare("SELECT id FROM banks LIMIT 1").first();
+  if(!existing){
+   await env.DB.prepare("INSERT INTO banks(id,name,manager,contact,address,email,login,pass,status,subscription) VALUES(?,?,?,?,?,?,?,?,?,?)")
+    .bind('OUKAMI-DIABO','ASSOCIATION OUKAMI DE DIABO','','0757577542 / 0545202646','Diabo','oukami011@gmail.com','__oukami_admin_pending__','__NO_LOGIN_UNTIL_SUPERADMIN_CREATES_PASSWORD__','Actif','PENDING').run();
+  }
+ }catch(e){}
  schemaReady=true;}
 
 async function managementSettings(env,bankId){
@@ -709,23 +713,22 @@ async function requireSession(req,env){const s=await getSession(req,env);if(!s)t
 function dbDateToDate(v){if(!v)return null;const raw=String(v).trim();if(!raw)return null;const iso=raw.includes('T')?raw:raw.replace(' ','T')+'Z';const d=new Date(iso);return isNaN(d.getTime())?null:d;}
 function dbDateText(d){const z=n=>String(n).padStart(2,'0');return `${d.getUTCFullYear()}-${z(d.getUTCMonth()+1)}-${z(d.getUTCDate())} ${z(d.getUTCHours())}:${z(d.getUTCMinutes())}:${z(d.getUTCSeconds())}`;}
 function addDaysDate(d,days){const x=new Date(d.getTime());x.setUTCDate(x.getUTCDate()+days);return x;}
-function planCode(v){const x=String(v||'FREE').trim().toUpperCase();return SUBSCRIPTION_PLANS[x]?x:'FREE';}
-function planDays(v){return SUBSCRIPTION_PLANS[planCode(v)].days;}
+function planCode(v){return String(v||'').trim().toUpperCase()==='ULTIMATE'?'ULTIMATE':'PENDING';}
+function planDays(v){return null;}
 function subscriptionInfo(bank){
- const plan=planCode(bank&&bank.subscription); const meta=SUBSCRIPTION_PLANS[plan]; const start=dbDateToDate(bank&&bank.subscription_started_at)||dbDateToDate(bank&&bank.created_at)||new Date(); const unlimited=plan==='ULTIMATE';
- const end=unlimited?null:(dbDateToDate(bank&&bank.subscription_expires_at)||addDaysDate(start,meta.days)); const now=new Date();
- const diff=unlimited?Infinity:end.getTime()-now.getTime(); const days=unlimited?null:Math.max(0,Math.ceil(diff/86400000)); const expired=!unlimited&&diff<0;
- return {subscription:plan,subscription_label:meta.label,subscription_started_at:bank&&bank.subscription_started_at?bank.subscription_started_at:dbDateText(start),subscription_expires_at:unlimited?'':(bank&&bank.subscription_expires_at?bank.subscription_expires_at:dbDateText(end)),days_remaining:days,subscription_state:expired?'Expiré':(bank&&bank.status==='Suspendu'?'Suspendu':'Actif'),expired,unlimited};
+ const plan=planCode(bank&&bank.subscription); const active=plan==='ULTIMATE'; const start=dbDateToDate(bank&&bank.subscription_started_at)||dbDateToDate(bank&&bank.created_at)||new Date();
+ const suspended=bank&&bank.status==='Suspendu';
+ return {subscription:plan,subscription_label:active?'Illimité':'En attente d’activation',subscription_started_at:active?(bank&&bank.subscription_started_at?bank.subscription_started_at:dbDateText(start)):'',subscription_expires_at:'',days_remaining:null,subscription_state:suspended?'Suspendu':(active?'Actif':'En attente d’activation'),expired:!active,unlimited:active};
 }
 async function requireActiveBankSubscription(env,bankId){
  const bank=await env.DB.prepare('SELECT id,status,subscription,subscription_started_at,subscription_expires_at,created_at FROM banks WHERE id=?').bind(bankId).first();
  if(!bank)throw json({error:'Banque introuvable.'},404);
  const sub=subscriptionInfo(bank);
  if(bank.status==='Suspendu')throw json({error:'Banque suspendue.'},403);
- if(sub.expired){try{await env.DB.prepare("UPDATE banks SET status='Expiré' WHERE id=? AND status<>'Suspendu'").bind(bankId).run();}catch(e){} throw json({error:'Abonnement expiré. Choisissez une formule disponible ou contactez le Super Admin.'},403);}
+ if(sub.expired)throw json({error:'Formule Illimité non activée. Contactez le Super Admin.'},403);
  return sub;
 }
-function bankListSelect(){return "SELECT id,name,manager,contact,address,login,status,subscription,subscription_started_at,subscription_expires_at,subscription_updated_at,created_at, CAST(MAX(0, (julianday(COALESCE(NULLIF(subscription_expires_at,''),created_at))-julianday('now')+0.9999)) AS INTEGER) AS days_remaining, CASE WHEN datetime(COALESCE(NULLIF(subscription_expires_at,''),created_at)) < datetime('now') THEN 'Expiré' WHEN status='Suspendu' THEN 'Suspendu' ELSE 'Actif' END AS subscription_state FROM banks ORDER BY created_at DESC";}
+function bankListSelect(){return "SELECT id,name,manager,contact,address,email,login,status,subscription,subscription_started_at,subscription_expires_at,subscription_updated_at,created_at, NULL AS days_remaining, CASE WHEN status='Suspendu' THEN 'Suspendu' WHEN upper(COALESCE(subscription,''))='ULTIMATE' THEN 'Actif' ELSE 'En attente d’activation' END AS subscription_state FROM banks ORDER BY created_at DESC";}
 
 async function bankPayload(env,bankId,session={}){
  const bank=await env.DB.prepare('SELECT id,name,manager,contact,address,email,slogan,logo,stamp,signature,primary_color,secondary_color,footer_text,legal_mentions,cga_conditions,currency,country,city,login,status,subscription,subscription_started_at,subscription_expires_at,subscription_updated_at,created_at FROM banks WHERE id=?').bind(bankId).first();
@@ -771,13 +774,19 @@ async function handleApi(request,env,path){
   await ensureSchema(env);
   if(path==='/api/status')return json({ok:true,cloudflare:true,d1:true,kv:true,message:'API connectée. D1 + KV actifs.'});
   if(path==='/api/register'&&request.method==='POST'){
-   const b=await body(request);const login=String(b.login||'').trim(),password=String(b.pass||'');
-   if(!b.name||!login||!password)return json({error:'Nom de banque, identifiant et mot de passe obligatoires.'},400);
-   const weak=assertPasswordStrength(password);if(weak)return json({error:weak},400);
-   if(loginReserved(env,login)||await loginExists(env,login))return json({error:'Identifiant déjà utilisé.'},409);
-   const id=uid('BANK'),passHash=await hashPassword(password);
-   await env.DB.prepare("INSERT INTO banks(id,name,manager,contact,address,email,city,country,login,pass,auth_version,status,subscription,subscription_started_at,subscription_expires_at,subscription_updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,1,?,?,datetime('now'),datetime('now','+10 days'),datetime('now'))").bind(id,b.name,b.manager||'',b.contact||'',b.address||'',b.email||'',b.city||'',b.country||'',login,passHash,'Actif','FREE').run();
-   await ensureCompanyAccount(env,id);await addLog(env,id,'Banque inscrite en version Free — 10 jours');return json({ok:true,id,subscription:'FREE'});
+   // V15: création du compte Administrateur strictement réservée au Super Admin.
+   return json({error:'Création publique désactivée. Seul le Super Admin peut créer le compte Administrateur depuis son espace sécurisé.'},403);
+  }
+  if(path==='/api/client-view'&&request.method==='POST'){
+   const b=await body(request);const accountNumber=String(b.account_number||'').trim();
+   if(!accountNumber)return json({error:'Numéro de compte obligatoire.'},400);
+   const limit=await checkLoginLimit(env,request,'client:'+accountNumber);if(limit.blocked)return json({error:'Trop de tentatives. Réessayez plus tard.',retry_after:limit.retryAfter},429,{'retry-after':limit.retryAfter});
+   const row=await env.DB.prepare(`SELECT a.id,a.number,a.type,a.balance,a.status,a.is_blocked,a.block_reason,a.credit_amount,a.credit_rate,a.credit_duration,a.credit_monthly,a.credit_due_count,a.credit_penalty_rate,a.credit_total,a.created_at,c.id AS client_id,c.name AS client_name,c.contact,c.job,c.address,c.client_type,c.is_blocked AS client_blocked,b.name AS association_name,b.currency FROM accounts a JOIN clients c ON c.id=a.client_id AND c.bank_id=a.bank_id JOIN banks b ON b.id=a.bank_id WHERE a.number=? AND COALESCE(a.is_deleted,0)=0 AND COALESCE(c.is_deleted,0)=0 LIMIT 1`).bind(accountNumber).first();
+   if(!row){await recordLoginFailure(env,request,'client:'+accountNumber);return json({error:'Numéro de compte introuvable.'},404);}
+   if(Number(row.client_blocked||0)===1)return json({error:'Accès client bloqué. Contactez l’association.'},403);
+   await clearAccountLoginFailures(env,request,'client:'+accountNumber);
+   const moves=(await env.DB.prepare('SELECT id,type,description,amount,balance_after,created_at FROM moves WHERE account_id=? AND COALESCE(is_voided,0)=0 ORDER BY created_at DESC LIMIT 300').bind(row.id).all()).results||[];
+   return json({ok:true,readonly:true,association:'ASSOCIATION OUKAMI DE DIABO',client:{id:row.client_id,name:row.client_name,contact:row.contact,job:row.job,address:row.address,type:row.client_type},account:{number:row.number,type:row.type,balance:row.balance,status:row.status,is_blocked:row.is_blocked,block_reason:row.block_reason,credit_amount:row.credit_amount,credit_rate:row.credit_rate,credit_duration:row.credit_duration,credit_monthly:row.credit_monthly,credit_due_count:row.credit_due_count,credit_penalty_rate:row.credit_penalty_rate,credit_total:row.credit_total,created_at:row.created_at,currency:row.currency||'FCFA'},moves});
   }
   if(path==='/api/login'&&request.method==='POST'){
    const b=await body(request);const login=String(b.login||'').trim(),password=String(b.pass||'');
@@ -794,7 +803,7 @@ async function handleApi(request,env,path){
    if(bank){
     const verified=await verifyPassword(password,bank.pass);if(!verified.ok)return failure();
     if(verified.needsUpgrade){const upgraded=await hashPassword(password);await env.DB.prepare('UPDATE banks SET pass=? WHERE id=?').bind(upgraded,bank.id).run();}
-    if(bank.status==='Suspendu')return json({error:'Banque suspendue.'},403);const sub=subscriptionInfo(bank);if(sub.expired){try{await env.DB.prepare("UPDATE banks SET status='Expiré' WHERE id=? AND status<>'Suspendu'").bind(bank.id).run();}catch(e){}await addSecurityLog(env,bank.id,{userName:bank.manager||'Administrateur banque',userRole:'Administrateur banque'},'Connexion refusée','Connexion','refusé','Abonnement expiré');return json({error:'Abonnement expiré. Choisissez une formule disponible ou contactez le Super Admin.'},403);}
+    if(bank.status==='Suspendu')return json({error:'Banque suspendue.'},403);const sub=subscriptionInfo(bank);if(sub.expired){await addSecurityLog(env,bank.id,{userName:bank.manager||'Administrateur banque',userRole:'Administrateur banque'},'Connexion refusée','Connexion','refusé','Formule Illimité non activée');return json({error:'Formule Illimité non activée. Contactez le Super Admin.'},403);}
     await clearAccountLoginFailures(env,request,login);const ctx={role:'bank',bankId:bank.id,userRole:'Administrateur banque',userName:bank.manager||'Administrateur banque',userLogin:bank.login,userId:'',authVersion:Number(bank.auth_version||1)};const token=await createSession(env,ctx);
     await addLog(env,bank.id,'Connexion administrateur');await addSecurityLog(env,bank.id,ctx,'Connexion','Connexion','autorisé','');return json({ok:true,role:'bank',bankId:bank.id,user:{name:ctx.userName,role:roleLabel(ctx.userRole)},subscription:sub.subscription,days_remaining:sub.days_remaining},200,{'set-cookie':sessionCookie(request,token)});
    }
@@ -802,7 +811,7 @@ async function handleApi(request,env,path){
    if(candidates.length!==1)return failure();const user=candidates[0];const verified=await verifyPassword(password,user.pass);if(!verified.ok)return failure();
    if(verified.needsUpgrade){const upgraded=await hashPassword(password);await env.DB.prepare('UPDATE users SET pass=? WHERE id=? AND bank_id=?').bind(upgraded,user.id,user.bank_id).run();}
    if(String(user.status||'Actif')!=='Actif')return json({error:'Utilisateur bloqué. Contactez l’administrateur.'},403);if(user.bank_status==='Suspendu')return json({error:'Banque suspendue.'},403);
-   const bankForSub={status:user.bank_status,subscription:user.subscription,subscription_started_at:user.subscription_started_at,subscription_expires_at:user.subscription_expires_at,created_at:user.bank_created_at};const sub=subscriptionInfo(bankForSub);if(sub.expired)return json({error:'Abonnement expiré. Choisissez une formule disponible ou contactez le Super Admin.'},403);
+   const bankForSub={status:user.bank_status,subscription:user.subscription,subscription_started_at:user.subscription_started_at,subscription_expires_at:user.subscription_expires_at,created_at:user.bank_created_at};const sub=subscriptionInfo(bankForSub);if(sub.expired)return json({error:'Formule Illimité non activée. Contactez le Super Admin.'},403);
    await clearAccountLoginFailures(env,request,login);await env.DB.prepare("UPDATE users SET last_login=datetime('now') WHERE id=? AND bank_id=?").bind(user.id,user.bank_id).run();const ctx={role:'bank',bankId:user.bank_id,userRole:user.role||'Agent consultation / auditeur',userName:user.name||user.login,userLogin:user.login,userId:user.id,userPermissions:user.permissions,lastLogin:new Date().toISOString(),authVersion:Number(user.auth_version||1)};const token=await createSession(env,ctx);
    await addSecurityLog(env,user.bank_id,ctx,'Connexion','Connexion','autorisé','');await addLog(env,user.bank_id,'Connexion utilisateur : '+(user.name||user.login)+' ('+roleLabel(user.role)+')');return json({ok:true,role:'bank',bankId:user.bank_id,user:{id:user.id,name:user.name||user.login,role:roleLabel(user.role),permissions:safePermissionsPayload(user.permissions,user.role)},subscription:sub.subscription,days_remaining:sub.days_remaining},200,{'set-cookie':sessionCookie(request,token)});
   }
@@ -877,8 +886,27 @@ async function handleApi(request,env,path){
    await addSecurityLog(env,row.recipient_bank_id||'',s,'Suppression message','Messagerie Super Admin','autorisé',row.subject||'');
    return json({ok:true});
   }
+  if(path==='/api/super/admin'&&request.method==='POST'&&s.role==='super'){
+   const u=await body(request);const bankId=String(u.bank_id||'').trim();const manager=String(u.manager||'').trim();const login=String(u.login||'').trim();const contact=String(u.contact||'').trim();const email=String(u.email||'').trim();const password=String(u.newpass||'');
+   if(!bankId||!manager||!login)return json({error:'Association, responsable et identifiant obligatoires.'},400);
+   let bank=await env.DB.prepare('SELECT id,login FROM banks WHERE id=?').bind(bankId).first();
+   if(!bank){
+    const singleton=await env.DB.prepare('SELECT id,login FROM banks ORDER BY created_at ASC LIMIT 1').first();
+    if(singleton)bank=singleton;
+   }
+   if(!bank)return json({error:'Association OUKAMI non initialisée. Rechargez l’espace Super Admin puis réessayez.'},404);
+   const effectiveBankId=String(bank.id);
+   if(String(bank.login||'')==='__oukami_admin_pending__'&&!password)return json({error:'Définissez obligatoirement un mot de passe lors de la création initiale du compte Administrateur.'},400);
+   if(loginReserved(env,login))return json({error:'Cet identifiant est réservé.'},409);
+   const otherBank=await env.DB.prepare('SELECT id FROM banks WHERE login=? AND id<>? LIMIT 1').bind(login,effectiveBankId).first();
+   const otherUser=await env.DB.prepare('SELECT id FROM users WHERE login=? AND COALESCE(is_deleted,0)=0 LIMIT 1').bind(login).first();
+   if(otherBank||otherUser)return json({error:'Identifiant déjà utilisé.'},409);
+   if(password){const weak=assertPasswordStrength(password);if(weak)return json({error:weak},400);const passHash=await hashPassword(password);await env.DB.prepare('UPDATE banks SET manager=?,login=?,contact=?,email=?,pass=?,auth_version=COALESCE(auth_version,1)+1 WHERE id=?').bind(manager,login,contact,email,passHash,effectiveBankId).run();}
+   else{await env.DB.prepare('UPDATE banks SET manager=?,login=?,contact=?,email=? WHERE id=?').bind(manager,login,contact,email,effectiveBankId).run();}
+   await addLog(env,effectiveBankId,'Compte Administrateur de l’association créé ou modifié par le Super Admin');await addSecurityLog(env,effectiveBankId,s,'Gestion compte Administrateur','Super Admin','autorisé',login);return json({ok:true});
+  }
   if(path==='/api/super/user'&&request.method==='POST'&&s.role==='super'){
-   return json({error:'La création des utilisateurs est réservée à l’Administrateur banque.'},403);
+   return json({error:'Utilisez la gestion du compte Administrateur de l’association.'},403);
   }
   if(path==='/api/super/user/toggle'&&request.method==='POST'&&s.role==='super'){
    return json({error:'Le blocage/déblocage des utilisateurs de banque est réservé à l’Administrateur banque.'},403);
@@ -894,7 +922,7 @@ async function handleApi(request,env,path){
   if(path==='/api/bank/action'&&request.method==='POST'&&s.role==='super'){
    const b=await body(request);const bank=await env.DB.prepare('SELECT id,status FROM banks WHERE id=?').bind(String(b.id||'')).first();if(!bank)return json({error:'Banque introuvable.'},404);
    if(b.action==='toggle'){await env.DB.prepare('UPDATE banks SET status=? WHERE id=?').bind(bank.status==='Actif'?'Suspendu':'Actif',bank.id).run();}
-   else if(b.action==='activate_business'||b.action==='business'||b.action==='activate_plan'){const full=await env.DB.prepare('SELECT * FROM banks WHERE id=?').bind(bank.id).first();const current=subscriptionInfo(full);const currentCode=planCode(full.subscription||'FREE');const code=b.action==='activate_business'||b.action==='business'?'BUSINESS':planCode(b.plan);if(!current.expired&&full.status!=='Expiré'&&currentCode!=='FREE')return json({error:'Impossible de souscrire à un autre abonnement tant que l’abonnement payant actuel est actif.'},409);if(currentCode==='FREE'&&code==='FREE'&&!current.expired&&full.status!=='Expiré')return json({error:'La version Free est déjà active. Choisissez Standard, Business ou Ultimate.'},409);const meta=SUBSCRIPTION_PLANS[code];const expires=code==='ULTIMATE'?null:`+${meta.days} days`;if(code==='ULTIMATE')await env.DB.prepare("UPDATE banks SET subscription=?,subscription_started_at=datetime('now'),subscription_expires_at='',subscription_updated_at=datetime('now'),status='Actif' WHERE id=?").bind(code,bank.id).run();else await env.DB.prepare("UPDATE banks SET subscription=?,subscription_started_at=datetime('now'),subscription_expires_at=datetime('now',?),subscription_updated_at=datetime('now'),status='Actif' WHERE id=?").bind(code,expires,bank.id).run();await addLog(env,bank.id,`Version ${meta.label} activée par le Super Admin`);}
+   else if(b.action==='activate_business'||b.action==='business'||b.action==='activate_plan'){await env.DB.prepare("UPDATE banks SET subscription='ULTIMATE',subscription_started_at=datetime('now'),subscription_expires_at='',subscription_updated_at=datetime('now'),status='Actif' WHERE id=?").bind(bank.id).run();await addLog(env,bank.id,'Formule Illimité activée par le Super Admin');}
    else if(b.action==='reset'){const password=String(b.newpass||'');const weak=assertPasswordStrength(password);if(weak)return json({error:weak},400);const passHash=await hashPassword(password);await env.DB.prepare('UPDATE banks SET pass=?,auth_version=COALESCE(auth_version,1)+1 WHERE id=?').bind(passHash,bank.id).run();await addSecurityLog(env,bank.id,s,'Réinitialisation mot de passe Administrateur banque','Super Admin','autorisé','Toutes les sessions précédentes invalidées');}
    else if(b.action==='delete'){
     const id=bank.id;await env.DB.batch([
@@ -905,6 +933,38 @@ async function handleApi(request,env,path){
   }
   if(s.role!=='bank')return json({error:'Action réservée à une banque.'},403); const bankId=s.bankId; await requireActiveBankSubscription(env,bankId);
   const roleDenied=await enforceRoleApiAccess(env,bankId,s,path,request); if(roleDenied)return roleDenied;
+
+
+  if((path==='/api/backup/export'||path==='/api/backup/import')){
+   if(sessionRoleKey(s)!=='admin_bank')return json({error:'Accès réservé à l’administrateur de l’association.'},403);
+   // D1 Worker API prohibits sqlite_master/PRAGMA introspection (SQLITE_AUTH).
+   // Static, reviewed allowlist of bank-scoped application tables.
+   const backupColumns={"clients":["id","bank_id","name","contact","job","address","piece","pass","client_type","client_details","photo_logo","is_blocked","is_deleted","created_at"],"accounts":["id","bank_id","client_id","number","type","balance","status","is_blocked","block_reason","is_deleted","credit_fee","credit_carnet_fee","credit_amount","credit_rate","credit_duration","credit_monthly","credit_due_count","credit_penalty_rate","credit_total","credit_choice","created_at"],"moves":["id","bank_id","account_id","type","description","amount","balance_after","created_by","created_by_role","is_voided","voided_by","voided_at","void_reason","created_at"],"charge_bases":["id"],"obligations":["id"],"account_types":["id"],"movement_types":["id"],"manual_revenues":["id"],"ignored_revenues":["id"],"management_settings":["bank_id"],"operation_requests":["id","bank_id","movement_id","requested_by","requested_by_name","requested_by_role","request_type","reason","status","reviewed_by","reviewed_at","review_note","created_at"]};
+   const names=Object.keys(backupColumns);
+   if(path==='/api/backup/export'&&request.method==='GET'){
+    const result={format:'OUKAMI_BACKUP_V1',created_at:new Date().toISOString(),association_id:bankId,tables:{}};
+    for(const name of names)result.tables[name]=(await env.DB.prepare('SELECT * FROM "'+name+'" WHERE bank_id=?').bind(bankId).all()).results||[];
+    return json(result);
+   }
+   if(path==='/api/backup/import'&&request.method==='POST'){
+    const payload=await body(request),backup=payload.backup;
+    if(!backup||backup.format!=='OUKAMI_BACKUP_V1'||!backup.tables||typeof backup.tables!=='object'||Array.isArray(backup.tables))return json({error:'Sauvegarde non reconnue.'},400);
+    if(Object.keys(backup.tables).some(n=>!names.includes(n)))return json({error:'La sauvegarde contient des tables inconnues ou interdites.'},400);
+    if(Object.keys(backup.tables).some(n=>!Array.isArray(backup.tables[n])||backup.tables[n].length>15000))return json({error:'Volume ou structure de sauvegarde invalide.'},400);
+    for(const name of names){const existing=await env.DB.prepare('SELECT COUNT(*) AS n FROM "'+name+'" WHERE bank_id=?').bind(bankId).first();if(Number(existing?.n||0)>0)return json({error:'Importation refusée : l’association contient déjà des données ('+name+'). Exportez une sauvegarde avant de migrer.'},409);}
+    const statements=[];let count=0;
+    for(const [name,rows] of Object.entries(backup.tables)){
+     const allowed=new Set(backupColumns[name]);
+     for(const row of rows){if(!row||typeof row!=='object'||Array.isArray(row)||!Object.keys(row).length||Object.keys(row).some(k=>!allowed.has(k))||row.bank_id!==backup.association_id)return json({error:'Ligne de sauvegarde invalide dans '+name},400);
+      const keys=Object.keys(row);const values=keys.map(k=>k==='bank_id'?bankId:row[k]);if(values.some(v=>v!==null&&typeof v!=='string'&&typeof v!=='number'))return json({error:'Valeur invalide dans '+name},400);
+      statements.push(env.DB.prepare('INSERT INTO "'+name+'" ('+keys.map(k=>'"'+k+'"').join(',')+') VALUES ('+keys.map(()=>'?').join(',')+')').bind(...values));count++;
+     }
+    }
+    if(statements.length>0)await env.DB.batch(statements);
+    await addSecurityLog(env,bankId,s,'Importation de sauvegarde','Paramètres','autorisé',String(count)+' enregistrements');
+    return json({ok:true,count});
+   }
+  }
 
   if(path==='/api/messages'&&request.method==='GET'){
    if(sessionRoleKey(s)!=='admin_bank')return json({error:'Messagerie réservée à l’Administrateur banque.'},403);

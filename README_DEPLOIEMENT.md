@@ -1,4 +1,4 @@
-# GLOBAL BANK — Cloudflare Pages + GitHub sécurisé
+# ASSOCIATION OUKAMI DE DIABO — Cloudflare Pages + GitHub sécurisé
 
 Cette version relie directement le Worker aux ressources Cloudflare sans inscrire les identifiants Super Admin dans le dépôt.
 
@@ -171,7 +171,7 @@ Aucune nouvelle variable ou liaison Cloudflare n’est nécessaire.
 ## Ajustements de connexion et pages internes — V8
 
 - La grande carte centrale de connexion est réduite de 20 % sur ordinateur : largeur maximale de 1 380 px à 1 104 px et hauteur minimale de 790 px à 632 px.
-- Le panneau gauche consacré à l’identité de GLOBAL BANK occupe 40 % de la carte.
+- Le panneau gauche consacré à l’identité de ASSOCIATION OUKAMI DE DIABO occupe 40 % de la carte.
 - Le panneau droit consacré au formulaire de connexion occupe 60 % de la carte.
 - Les espacements, icônes, titres et cartes d’information ont été ajustés pour conserver un rendu équilibré.
 - La bannière horizontale « Bienvenue, … / rôle / date et heure » a été supprimée de toutes les pages internes.

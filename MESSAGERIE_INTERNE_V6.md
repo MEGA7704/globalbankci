@@ -1,4 +1,4 @@
-# GLOBAL BANK V6 — Messagerie interne sécurisée
+# ASSOCIATION OUKAMI DE DIABO V6 — Messagerie interne sécurisée
 
 ## Fonctionnalités
 

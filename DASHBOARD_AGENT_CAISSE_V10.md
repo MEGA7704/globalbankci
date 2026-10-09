@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO V10 — Tableau de bord Agent caisse
+# GLOBAL BANK V10 — Tableau de bord Agent caisse
 
 Cette version améliore uniquement la présentation du tableau de bord de l’Agent caisse sans élargir ses autorisations RBAC.
 

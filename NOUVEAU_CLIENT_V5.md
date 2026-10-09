@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO — Nouveau formulaire client V5
+# GLOBAL BANK — Nouveau formulaire client V5
 
 Cette version ajoute et sécurise le formulaire professionnel **Nouveau client** dans la section **Clients**.
 

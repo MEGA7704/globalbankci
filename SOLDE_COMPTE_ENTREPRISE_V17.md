@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO V17 — Solde du Compte entreprise automatique
+# GLOBAL BANK V17 — Solde du Compte entreprise automatique
 
 Règle officielle appliquée :
 

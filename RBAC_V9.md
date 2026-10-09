@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO V9 — Gestion sécurisée des rôles et autorisations
+# GLOBAL BANK V9 — Gestion sécurisée des rôles et autorisations
 
 ## Rôles bancaires officiels
 

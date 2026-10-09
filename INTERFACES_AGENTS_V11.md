@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO V11 — Interfaces professionnelles des agents
+# GLOBAL BANK V11 — Interfaces professionnelles des agents
 
 ## Changements
 

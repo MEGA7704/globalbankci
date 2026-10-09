@@ -1,5 +1,5 @@
 {
-  "name": "association-oukami-diabo",
+  "name": "global-bank-cloudflare",
   "version": "6.29.0",
   "private": true,
   "type": "module",
@@ -7,11 +7,11 @@
     "build": "node scripts/validate-build.mjs && node scripts/check-cloudflare-config.mjs",
     "config:check": "node scripts/check-cloudflare-config.mjs",
     "secrets:configure": "node scripts/configure-cloudflare-secrets.mjs",
-    "secrets:list": "wrangler pages secret list --project-name oukami-diabo",
+    "secrets:list": "wrangler pages secret list --project-name global-bank",
     "dev": "wrangler pages dev public",
-    "deploy": "wrangler pages deploy public --project-name oukami-diabo",
-    "db:migrate:remote": "wrangler d1 migrations apply oukami_d1 --remote",
-    "db:migrate:local": "wrangler d1 migrations apply oukami_d1 --local",
+    "deploy": "wrangler pages deploy public --project-name global-bank",
+    "db:migrate:remote": "wrangler d1 migrations apply bankdb --remote",
+    "db:migrate:local": "wrangler d1 migrations apply bankdb --local",
     "test:security": "node tests/worker-security.test.mjs && node tests/rbac-v9.test.mjs && node tests/ui-rbac-v9.test.mjs && node tests/ui-cashier-dashboard-v10.test.mjs && node tests/ui-agent-dashboards-v11.test.mjs && node tests/ui-admin-workflows-v12.test.mjs && node tests/ui-admin-credit-report-v13.test.mjs && node tests/ui-agent-workflows-v14.test.mjs && node tests/movement-permissions-v15.test.mjs && node tests/has-any-perm-v16.test.mjs && node tests/company-balance-v20.test.mjs && node tests/company-balance-active-appro-v20-functional.test.mjs && node tests/dashboard-approvisionnement-v19.test.mjs && node tests/ui-dashboard-v21.test.mjs && node tests/credit-repayment-balance-v18.test.mjs"
   },
   "devDependencies": {

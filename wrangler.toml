@@ -1,4 +1,4 @@
-name = "oukami-diabo"
+name = "global-bank"
 pages_build_output_dir = "public"
 compatibility_date = "2026-08-01"
 
@@ -7,16 +7,17 @@ compatibility_date = "2026-08-01"
 # afin d'invalider toutes les sessions précédentes.
 [vars]
 SUPER_ADMIN_SESSION_VERSION = "1"
-SUPER_ADMIN_LOGIN = "mega@services.local"
 
-# SUPER_ADMIN_LOGIN n’est pas sensible. Le mot de passe Super Admin reste exclusivement
-# un secret chiffré Cloudflare : SUPER_ADMIN_PASSWORD (ne jamais le publier dans le dépôt).
+# Les valeurs SUPER_ADMIN_LOGIN et SUPER_ADMIN_PASSWORD ne doivent jamais être
+# placées ici. Elles sont ajoutées comme secrets chiffrés dans Cloudflare Pages
+# et sont accessibles uniquement côté serveur via env.SUPER_ADMIN_LOGIN et
+# env.SUPER_ADMIN_PASSWORD.
 
 [[d1_databases]]
 binding = "DB"
-database_name = "oukami_d1"
-database_id = "001c173e-694b-434d-a8fc-8c5fa2351438"
+database_name = "bankdb"
+database_id = "692edd7a-98d5-484a-aa75-5a86a9107c16"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "25eac34d165240bfbd8c1bcd14c2954d"
+id = "f02b47264a8c411aa61052c45a3bb72a"

@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO V12 — améliorations d’interface
+# GLOBAL BANK V12 — améliorations d’interface
 
 - Bouton **Nouvelle demande** aligné avec **Historique de mes demandes** pour Agent caisse, Agent crédit et Auditeur.
 - Formulaire déplacé dans un popup professionnel **Nouvelle demande de correction**.

@@ -1,4 +1,4 @@
-# ASSOCIATION OUKAMI DE DIABO V15 — Types de mouvements des agents
+# GLOBAL BANK V15 — Types de mouvements des agents
 
 ## Agent caisse
 Types autorisés par défaut et contrôlés dans `_worker.js` :
